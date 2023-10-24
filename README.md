@@ -15,6 +15,7 @@ Super simple zsh script to start recording sound, send it to whisper then have i
 * after 1s a minimalist yad window appears and takes focus away from the field
 * press Escape to exit the yad window, this will trigger whisper
 * when whisper is done, xdotool will type for you (every few keystrokes, the script will check that your mouse has not moved to avoid launching random shortcuts into other apps)
+* If you enter a text in the field, it will be passed as instruction to chatgpt to transform the whisper output
 
 ### i3 bindings
 ```
