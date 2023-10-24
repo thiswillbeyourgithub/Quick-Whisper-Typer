@@ -54,9 +54,6 @@ input=$(yad \
     --on-top \
     --button="STOP!gtk-media-stop":0
     )
-    # --close-on-unfocus
-    #--accel="r":"./toggle_recording.sh \"$FILE\""
-    #--button="Record!gtk-media-record":"./toggle_recording.sh \"$FILE\"" \
 
 echo "Exit yad: $input"
 
