@@ -1,4 +1,4 @@
-# Yad Quick Microphone
+# Quick Whisper Typer
 Super simple zsh script to start recording sound, send it to whisper then have it type for you in a field.
 
 ## Features
