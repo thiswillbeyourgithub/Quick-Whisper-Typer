@@ -2,6 +2,7 @@
 
 # set -euxo pipefail
 
+# check if the language is supplied
 LANG=$1
 allowed_langs=("fr" "en")
 if [[ -z "$LANG" || ! " ${allowed_langs[@]}  " =~ " $LANG " ]]
@@ -10,12 +11,17 @@ then
     exit 1
 fi
 
-FILE="/tmp/audio_recording_$(date +%s).mp3"
+# load openai api key
 cd "$(dirname "$0")"
 export OPENAI_API_KEY=$(cat ./API_KEY.txt)
+
+# if using azerty, make sure to use french keyboard for xdotool
+setxkbmap fr
+
+FILE="/tmp/audio_recording_$(date +%s).mp3"
 start_time=$(date +%s)
-min_duration=1
-max_distance=10
+min_duration=3  # if the recording is shorter, exit
+max_distance=10  # mouse distance above which we stop typing
 
 record() {
     echo "Recording $1"
@@ -25,13 +31,14 @@ type_input() {
     xdotool type --delay 0 "$1" 2>/dev/null
 }
 check_mouse_movement() {
-    current_pos=$(xdotool getmouselocation --shell 2>/dev/null) 2>/dev/null
+    current_pos=$(xdotool getmouselocation --shell)
 
     # Calculate the distance moved by the mouse
-    distance=$(echo "sqrt((${current_pos%X}-$initial_pos_X)^2 + (${current_pos%Y}-$initial_pos_Y)^2)" | bc) 2>/dev/null
+    distance=$(echo "sqrt((${current_pos%X}-$initial_pos_X)^2 + (${current_pos%Y}-$initial_pos_Y)^2)" | bc)
 
     # Check if the distance moved exceeds a specific amount
-    if (( $(echo "$distance > $max_distance" | bc -l) )); then
+    if (( $(echo "$distance > $max_distance" | bc -l) ))
+    then
         echo "Mouse movement detected. Stopping..."
         exit 1
     fi
@@ -47,28 +54,27 @@ record $FILE
 # give time to the user to position the cursor
 sleep 1
 
-# create a form, will keep going after exiting
+# yad form
 input=$(yad \
     --form \
     --title "Yad Sound Recorder" \
-    --field "ChatGPT command" \
+    --field "ChatGPT instruction" \
     --on-top \
     --button="STOP!gtk-media-stop":0
     )
-
-echo "Exit yad: $input"
+echo "Exit yad\nChatGPT instruction: $input"
 
 # kill the recording
 killall rec >/dev/null 2>&1
-echo "Done recording"
+echo "Done recording $FILE"
 
+# check duration
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 echo "Duration $duration"
-
 if (( duration < min_duration ))
 then
-    echo "Recording too short, exiting without calling whisper."
+    echo "Recording too short ($duration s), exiting without calling whisper."
     sleep 1
     echo ""
     exit 0
@@ -78,24 +84,21 @@ fi
 # echo "playing file"
 # mplayer $FILE
 
+# record mouse position
 initial_pos=$(xdotool getmouselocation --shell)
 
 echo "Calling whisper"
 text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "Note vocale pour mon assistant : ")
-echo "Whisper text: $text"
+echo "Whisper transcript: $text"
 
-# echo "Calling chatgpt"
 if [[ ! -z $input ]]
 then
-    echo "Using chatgpt with command $input"
+    echo "Calling ChatGPT with instruction $input"
     text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "$input" -g user "$text")
-    echo "ChatGPT text: $text"
+    echo "ChatGPT output: $text"
 else
     echo "Not using ChatGPT"
 fi
-
-# make sure to use french keyboard
-setxkbmap fr
 
 i=1
 while (( i <= ${#text} ))
