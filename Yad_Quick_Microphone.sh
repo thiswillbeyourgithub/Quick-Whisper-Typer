@@ -51,6 +51,7 @@ sleep 1
 input=$(yad \
     --form \
     --title "Yad Sound Recorder" \
+    --field "ChatGPT command" \
     --on-top \
     --button="STOP!gtk-media-stop":0
     )
@@ -84,8 +85,14 @@ text=$(openai api audio.transcribe --model whisper-1 --response-format text --te
 echo "Whisper text: $text"
 
 # echo "Calling chatgpt"
-# text=$(echo "$text" | llm "traduit ce texte en anglais")
-# echo "ChatGPT text: $text"
+if [[ ! -z $input ]]
+then
+    echo "Using chatgpt with command $input"
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "$input" -g user "$text")
+    echo "ChatGPT text: $text"
+else
+    echo "Not using ChatGPT"
+fi
 
 # make sure to use french keyboard
 setxkbmap fr
