@@ -28,7 +28,8 @@ record() {
     rec -r 44000 -c 1 -b 16 "$1" &
 }
 type_input() {
-    xdotool type --delay 0 "$1" 2>/dev/null
+    # xdotool type --delay 0 "$1" 2>/dev/null
+    xdotool key --delay 0 "$1" 2>/dev/null
 }
 check_mouse_movement() {
     current_pos=$(xdotool getmouselocation --shell)
@@ -106,11 +107,27 @@ else
     echo "Not using ChatGPT"
 fi
 
+function replace_char() {
+    local -A replace_table
+    replace_table=(é eacute à agrave è egrave ç ccedilla " " space)
+    if [[ -n ${replace_table[$1]} ]]; then
+        echo ${replace_table[$1]}
+    else
+        echo $1
+    fi
+}
+
+
 i=1
 while (( i <= ${#text} ))
 do
+
     # type character
     current_char=${text[$i]}
+
+    # replace character by xdotool friendly alternative if possible
+    current_char=$(replace_char "$current_char")
+
     type_input "$current_char"
     (( i++ ))
 
