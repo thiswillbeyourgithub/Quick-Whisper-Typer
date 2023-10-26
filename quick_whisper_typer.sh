@@ -84,6 +84,12 @@ fi
 # echo "playing file"
 # mplayer $FILE
 
+# removing silences longer than 0.3s
+sox $FILE "unsilenced_$FILE" silence -l 1 0.1 1% -1 0.3 1%
+
+$FILE="unsilenced_$FILE"
+echo "Removed silence, new file is $FILE"
+
 # record mouse position
 initial_pos=$(xdotool getmouselocation --shell)
 
