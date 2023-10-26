@@ -5,6 +5,7 @@ Super simple zsh script to start recording sound, send it to whisper then have i
 * Automatically stops if you move the mouse too much. You are supposed to launch the script, move the mouse to the field you want to type int, then press Escape to exit the yad window. This will then trigger the whisper code.
 * Input argmuent allows to choose the language
 * One can quickly use openai chatgpt to correct texts like that, including on the go translation etc
+* Removes long silences via sox
 
 ## How to
 * Put your OpenAI api key in a file called API_KEY.txt
