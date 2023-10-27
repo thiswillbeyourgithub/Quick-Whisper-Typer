@@ -10,10 +10,12 @@ then
     echo "Invalid lang $LANG"
     exit 1
 fi
+
 if [[ "$LANG" == "fr" ]]
 then
     PROMPT="Dictée vocale sur mon téléphone: "
-elif [[ "$LANG" == "en" ]]
+ elif [[ "$LANG" == "en" ]]
+then
     PROMPT="Dictation on my smartphone: "
 fi
 
