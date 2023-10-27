@@ -10,6 +10,13 @@ then
     echo "Invalid lang $LANG"
     exit 1
 fi
+if [[ "$LANG" == "fr" ]]
+then
+    PROMPT="Dictée vocale sur mon téléphone: "
+elif [[ "$LANG" == "en" ]]
+    PROMPT="Dictation on my smartphone: "
+fi
+
 
 # load openai api key
 cd "$(dirname "$0")"
@@ -95,7 +102,7 @@ echo "Removed silence, new file is $FILE"
 initial_pos=$(xdotool getmouselocation --shell)
 
 echo "Calling whisper"
-text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "Note vocale pour mon assistant : ")
+text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
 echo "Whisper transcript: $text"
 
 if [[ ! -z $input ]]
