@@ -130,6 +130,11 @@ function replace_char() {
 i=1
 while (( i <= ${#text} ))
 do
+    # every few character check if the mouse moved
+    if (( i % 5 == 0 ))
+    then
+        check_mouse_movement
+    fi
 
     # type character
     current_char=${text[$i]}
@@ -139,11 +144,5 @@ do
 
     type_input "$current_char"
     (( i++ ))
-
-    # every few character check if the mouse moved
-    if (( i % 5 == 0 ))
-    then
-        check_mouse_movement
-    fi
 done
 
