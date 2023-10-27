@@ -116,7 +116,7 @@ fi
 
 function replace_char() {
     local -A replace_table
-    replace_table=(é eacute à agrave è egrave ç ccedilla " " space)
+    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "'" apostrophe "\n" Return "\r" Return % percent)
     if [[ -n ${replace_table[$1]} ]]; then
         echo ${replace_table[$1]}
     else
