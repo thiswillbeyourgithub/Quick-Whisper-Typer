@@ -94,9 +94,12 @@ fi
 # echo "playing file"
 # mplayer $FILE
 
-# removing silences longer than 0.3s
-sox $FILE "unsilenced_$FILE" silence -l 1 0.1 1% -1 0.3 1%
-
+# removing silences longer than Xs
+# sox $FILE "unsilenced_$FILE" silence -l 1 0.1 1% -1 0.3 1%
+rm /tmp/tmpoutput*.mp3
+sox $FILE /tmp/tmpoutput.mp3 silence 1 1 0.1% 1 1 0.1% : newfile : restart
+cat /tmp/tmpoutput*.mp3 > "/tmp/unsilenced_$FILE"
+rm /tmp/tmpout*.mp3"
 $FILE="unsilenced_$FILE"
 echo "Removed silence, new file is $FILE"
 
