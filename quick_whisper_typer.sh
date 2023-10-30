@@ -99,7 +99,7 @@ fi
 rm /tmp/tmpoutput*.mp3
 sox $FILE /tmp/tmpoutput.mp3 silence 1 1 0.1% 1 1 0.1% : newfile : restart
 cat /tmp/tmpoutput*.mp3 > "/tmp/unsilenced_$FILE"
-rm /tmp/tmpout*.mp3"
+rm /tmp/tmpout*.mp3
 $FILE="unsilenced_$FILE"
 echo "Removed silence, new file is $FILE"
 
@@ -121,7 +121,7 @@ fi
 
 function replace_char() {
     local -A replace_table
-    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "'" apostrophe "\n" Return "\r" Return % percent - minus ô ocircumflex ê ecircumflex)
+    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "\'" apostrophe "\n" Return "\r" Return % percent - minus ô ocircumflex ê ecircumflex)
     if [[ -n ${replace_table[$1]} ]]; then
         echo ${replace_table[$1]}
     else
