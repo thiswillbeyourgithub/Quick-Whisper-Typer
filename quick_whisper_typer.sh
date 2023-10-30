@@ -30,7 +30,7 @@ setxkbmap fr
 FILE="/tmp/audio_recording_$(date +%s).mp3"
 start_time=$(date +%s)
 min_duration=3  # if the recording is shorter, exit
-max_distance=10  # mouse distance above which we stop typing
+max_distance=2  # mouse distance above which we stop typing
 
 record() {
     echo "Recording $1"
