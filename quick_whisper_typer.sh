@@ -121,7 +121,7 @@ fi
 
 function replace_char() {
     local -A replace_table
-    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "'" apostrophe "\n" Return "\r" Return % percent - minus ô ocircumflex ê ecircumflex ù ugrave î icircumflex)
+    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "'" apostrophe "\n" Return "\r" Return % percent - minus ô ocircumflex ê ecircumflex ù ugrave î icircumflex "," comma "." period "?" question "!" exclam "*" asterisk ":" colon ";" semicolon û ucircumflex)
     if [[ -n ${replace_table[$1]} ]]; then
         echo ${replace_table[$1]}
     else
