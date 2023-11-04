@@ -2,8 +2,26 @@
 
 # set -euxo pipefail
 
-# check if the language is supplied
-LANG=$1
+# Parsing command line arguments as an array
+for arg in "$@"; do
+    case "$arg" in
+        -l | --language)
+            LANG="$2"
+            shift 2
+            ;;
+        -p | --prompt)
+            PROMPT="$2"
+            shift 2
+            ;;
+        #*)
+        #    echo "Invalid option: $arg"
+        #    exit 1
+        #    ;;
+    esac
+done
+echo "Will use language $LANG and prompt $PROMPT"
+
+# check if the language is supplied and correct
 allowed_langs=("fr" "en")
 if [[ -z "$LANG" || ! " ${allowed_langs[@]}  " =~ " $LANG " ]]
 then
@@ -11,12 +29,15 @@ then
     exit 1
 fi
 
-if [[ "$LANG" == "fr" ]]
+if [[ -z "$PROMPT" ]]
 then
-    PROMPT="Dictée vocale sur mon téléphone: "
- elif [[ "$LANG" == "en" ]]
-then
-    PROMPT="Dictation on my smartphone: "
+    if [[ "$LANG" == "fr" ]]
+    then
+        PROMPT="Dictée vocale sur mon téléphone: "
+     elif [[ "$LANG" == "en" ]]
+    then
+        PROMPT="Dictation on my smartphone: "
+    fi
 fi
 
 
