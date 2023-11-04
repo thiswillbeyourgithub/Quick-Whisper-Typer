@@ -1,5 +1,5 @@
 # Quick Whisper Typer
-Super simple zsh script to start recording sound, send it to whisper then have it type for you in a field.
+Super simple zsh script to start recording sound, send it to whisper then have it type for you in a field. Can be used to transform the clipboard too. Latency is <2s and sometimes <1s.
 
 ## The way this works
 1. Move your cursor to where you want the output to be.
