@@ -3,6 +3,9 @@
 # set -euxo pipefail
 
 # Parsing command line arguments as an array
+LANG=""
+PROMPT=""
+TRANSFORM=0
 for arg in "$@"; do
     case "$arg" in
         -l | --language)
@@ -13,13 +16,17 @@ for arg in "$@"; do
             PROMPT="$2"
             shift 2
             ;;
+        -t | --transform_clipboard)
+            TRANSFORM=1
+            shift 2
+            ;;
         #*)
         #    echo "Invalid option: $arg"
         #    exit 1
         #    ;;
     esac
 done
-echo "Will use language $LANG and prompt $PROMPT"
+echo "Will use language $LANG and prompt $PROMPT and transform $TRANSFORM "
 
 # check if the language is supplied and correct
 allowed_langs=("fr" "en")
@@ -65,14 +72,14 @@ record $FILE
 sleep 1
 
 # yad form
-input=$(yad \
+instruction=$(yad \
     --form \
     --title "Yad Sound Recorder" \
     --field "ChatGPT instruction" \
     --on-top \
     --button="STOP!gtk-media-stop":0
     )
-echo "Exit yad\nChatGPT instruction: $input"
+echo "\nChatGPT instruction: $instruction for task $TRANSFORM"
 
 # kill the recording
 killall rec >/dev/null 2>&1
@@ -106,9 +113,19 @@ echo "Calling whisper"
 text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
 echo "Whisper transcript: $text"
 
-if [[ ! -z $input ]]
+prev_clipboard=$(xclip -o -sel clip)
+
+if [[ $TRANSFORM == "1" ]]
+    then
+    echo "Calling ChatGPT with instruction $input to transform the clipboard"
+    echo "current keyboard: $prev_clipboard"
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT:'$prev_clipboard'\n\nINSTRUCTION: '$text'")
+    echo "ChatGPT answer after transformation: $text"
+    fi
+
+if [[ ! -z $instruction ]]
 then
-    echo "Calling ChatGPT with instruction $input"
+    echo "Calling ChatGPT with instruction $instruction"
     text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "$input" -g user "$text")
     echo "ChatGPT output: $text"
 else
@@ -116,8 +133,6 @@ else
 fi
 
 
-# store previous clipboard, paste, recopies previous clipboard
-prev_clipboard=$(xclip -o -sel clip)
 echo "$text" | xclip -sel clip
 xdotool key ctrl+v
 echo "$prev_clipboard" | xclip -sel clip
