@@ -113,7 +113,7 @@ echo "Calling whisper"
 text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
 echo "Whisper transcript: $text"
 
-prev_clipboard=$(xclip -o -sel clip)
+prev_clipboard=$(xclip -o -sel clipboard)
 
 if [[ $TRANSFORM == "1" ]]
     then
@@ -133,6 +133,9 @@ else
 fi
 
 
-echo "$text" | xclip -sel clip
+# save to all clipboard just in case
+echo "$text" | xclip -sel primary
+echo "$text" | xclip -sel secondary
+echo "$text" | xclip -sel clipoard
 xdotool key ctrl+v
-echo "$prev_clipboard" | xclip -sel clip
+echo "$prev_clipboard" | xclip -sel clipboard
