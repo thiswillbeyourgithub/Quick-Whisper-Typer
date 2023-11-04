@@ -122,16 +122,16 @@ prev_clipboard=$(xclip -o -sel clipboard)
 
 if [[ $TRANSFORM == "1" ]]
     then
-    log "Calling ChatGPT with instruction $input to transform the clipboard"
+    log "Calling ChatGPT with instruction $instruction to transform the clipboard"
     log "current keyboard: $prev_clipboard"
-    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT:'$prev_clipboard'\n\nINSTRUCTION: '$text'")
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$prev_clipboard'\n\nINSTRUCTION: '$text'")
     log "ChatGPT answer after transformation: $text"
     fi
 
 if [[ ! -z $instruction ]]
 then
     log "Calling ChatGPT with instruction $instruction"
-    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "$input" -g user "$text")
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$text'\n\nINSTRUCTION: '$instruction'")
     log "ChatGPT output: $text"
 else
     log "Not using ChatGPT"
