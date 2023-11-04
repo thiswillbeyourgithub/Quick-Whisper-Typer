@@ -24,34 +24,13 @@ fi
 cd "$(dirname "$0")"
 export OPENAI_API_KEY=$(cat ./API_KEY.txt)
 
-# if using azerty, make sure to use french keyboard for xdotool
-setxkbmap fr
-
 FILE="/tmp/audio_recording_$(date +%s).mp3"
 start_time=$(date +%s)
 min_duration=3  # if the recording is shorter, exit
-max_distance=2  # mouse distance above which we stop typing
 
 record() {
     echo "Recording $1"
     rec -r 44000 -c 1 -b 16 "$1" &
-}
-type_input() {
-    # xdotool type --delay 0 "$1" 2>/dev/null
-    xdotool key --delay 0 "$1" 2>/dev/null
-}
-check_mouse_movement() {
-    current_pos=$(xdotool getmouselocation --shell)
-
-    # Calculate the distance moved by the mouse
-    distance=$(echo "sqrt((${current_pos%X}-$initial_pos_X)^2 + (${current_pos%Y}-$initial_pos_Y)^2)" | bc)
-
-    # Check if the distance moved exceeds a specific amount
-    if (( $(echo "$distance > $max_distance" | bc -l) ))
-    then
-        echo "Mouse movement detected. Stopping..."
-        exit 1
-    fi
 }
 
 
@@ -103,9 +82,6 @@ rm /tmp/tmpout*.mp3
 $FILE="unsilenced_$FILE"
 echo "Removed silence, new file is $FILE"
 
-# record mouse position
-initial_pos=$(xdotool getmouselocation --shell)
-
 echo "Calling whisper"
 text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
 echo "Whisper transcript: $text"
@@ -119,33 +95,9 @@ else
     echo "Not using ChatGPT"
 fi
 
-function replace_char() {
-    local -A replace_table
-    replace_table=(é eacute à agrave è egrave ç ccedilla " " space â acircumflex "'" apostrophe "\n" Return "\r" Return % percent - minus ô ocircumflex ê ecircumflex ù ugrave î icircumflex "," comma "." period "?" question "!" exclam "*" asterisk ":" colon ";" semicolon û ucircumflex)
-    if [[ -n ${replace_table[$1]} ]]; then
-        echo ${replace_table[$1]}
-    else
-        echo $1
-    fi
-}
 
-
-i=1
-while (( i <= ${#text} ))
-do
-    # every few character check if the mouse moved
-    if (( i % 5 == 0 ))
-    then
-        check_mouse_movement
-    fi
-
-    # type character
-    current_char=${text[$i]}
-
-    # replace character by xdotool friendly alternative if possible
-    current_char=$(replace_char "$current_char")
-
-    type_input "$current_char"
-    (( i++ ))
-done
-
+# store previous clipboard, paste, recopies previous clipboard
+prev_clipboard=$(xclip -o -sel clip)
+echo "$text" | xclip -sel clip
+xdotool key ctrl+v
+echo "$prev_clipboard" | xclip -sel clip
