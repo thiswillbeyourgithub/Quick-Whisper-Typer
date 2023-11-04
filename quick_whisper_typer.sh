@@ -57,8 +57,13 @@ start_time=$(date +%s)
 min_duration=3  # if the recording is shorter, exit
 
 record() {
-    echo "Recording $1"
+    log "Recording $1"
     rec -r 44000 -c 1 -b 16 "$1" &
+}
+
+log() {
+    echo $1
+    echo "$(date +%s) $1" >> ./texts.log
 }
 
 
@@ -79,21 +84,21 @@ instruction=$(yad \
     --on-top \
     --button="STOP!gtk-media-stop":0
     )
-echo "\nChatGPT instruction: $instruction for task $TRANSFORM"
+log "\nChatGPT instruction: $instruction for task $TRANSFORM"
 
 # kill the recording
 killall rec >/dev/null 2>&1
-echo "Done recording $FILE"
+log "Done recording $FILE"
 
 # check duration
 end_time=$(date +%s)
 duration=$((end_time - start_time))
-echo "Duration $duration"
+log "Duration $duration"
 if (( duration < min_duration ))
 then
-    echo "Recording too short ($duration s), exiting without calling whisper."
+    log "Recording too short ($duration s), exiting without calling whisper."
     sleep 1
-    echo ""
+    log ""
     exit 0
 fi
 
@@ -107,29 +112,29 @@ sox $FILE /tmp/tmpoutput.mp3 silence 1 1 0.1% 1 1 0.1% : newfile : restart
 cat /tmp/tmpoutput*.mp3 > "/tmp/unsilenced_$FILE"
 rm /tmp/tmpout*.mp3
 $FILE="unsilenced_$FILE"
-echo "Removed silence, new file is $FILE"
+log "Removed silence, new file is $FILE"
 
-echo "Calling whisper"
+log "Calling whisper"
 text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
-echo "Whisper transcript: $text"
+log "Whisper transcript: $text"
 
 prev_clipboard=$(xclip -o -sel clipboard)
 
 if [[ $TRANSFORM == "1" ]]
     then
-    echo "Calling ChatGPT with instruction $input to transform the clipboard"
-    echo "current keyboard: $prev_clipboard"
+    log "Calling ChatGPT with instruction $input to transform the clipboard"
+    log "current keyboard: $prev_clipboard"
     text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT:'$prev_clipboard'\n\nINSTRUCTION: '$text'")
-    echo "ChatGPT answer after transformation: $text"
+    log "ChatGPT answer after transformation: $text"
     fi
 
 if [[ ! -z $instruction ]]
 then
-    echo "Calling ChatGPT with instruction $instruction"
+    log "Calling ChatGPT with instruction $instruction"
     text=$(openai api chat_completions.create --model gpt-3.5-turbo -g system "$input" -g user "$text")
-    echo "ChatGPT output: $text"
+    log "ChatGPT output: $text"
 else
-    echo "Not using ChatGPT"
+    log "Not using ChatGPT"
 fi
 
 
