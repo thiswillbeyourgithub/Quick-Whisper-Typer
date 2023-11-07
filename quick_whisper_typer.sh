@@ -115,7 +115,7 @@ $FILE="unsilenced_$FILE"
 log "Removed silence, new file is $FILE"
 
 log "Calling whisper"
-text=$(openai api audio.transcriptions.create --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
+text=$(openai api audio.transcribe --model whisper-1 --response-format text --temperature 0 -f $FILE  --language $LANG --prompt "$PROMPT")
 log "Whisper transcript: $text"
 
 prev_clipboard=$(xclip -o -sel clipboard)
@@ -124,14 +124,14 @@ if [[ $TRANSFORM == "1" ]]
     then
     log "Calling ChatGPT with instruction $instruction to transform the clipboard"
     log "current keyboard: $prev_clipboard"
-    text=$(openai api chat.completions.create --model gpt-3.5-turbo-1106 -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$prev_clipboard'\n\nINSTRUCTION: '$text'")
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo-1106 -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$prev_clipboard'\n\nINSTRUCTION: '$text'")
     log "ChatGPT answer after transformation: $text"
     fi
 
 if [[ ! -z $instruction ]]
 then
     log "Calling ChatGPT with instruction $instruction"
-    text=$(openai api chat.completions.create --model gpt-3.5-turbo-1106 -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$text'\n\nINSTRUCTION: '$instruction'")
+    text=$(openai api chat_completions.create --model gpt-3.5-turbo-1106 -g system "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else." -g user "INPUT_TEXT: '$text'\n\nINSTRUCTION: '$instruction'")
     log "ChatGPT output: $text"
 else
     log "Not using ChatGPT"
