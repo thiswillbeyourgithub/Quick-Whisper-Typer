@@ -187,7 +187,8 @@ then
         messages=()
         IFS="#####"
         while IFS= read -r line; do
-            messages+=("$line")
+            trimmed=$(echo "$line" | sed -e 's/^\s\+//' -e 's/\s\+$//')
+            messages+=("$trimmed")
         done < $VOCAL_FILE
 
         # parse the message as a long arg string
