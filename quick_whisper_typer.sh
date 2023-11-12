@@ -9,12 +9,12 @@ TASK=""
 
 # pre defined prompts
 declare -A prompts
-prompts[fr]="Dictée vocale sur mon téléphone: "
+prompts[fr]="Dictee vocale sur mon telephone: "
 prompts[en]="Dictation on my smartphone: "
 
 # pre defined system prompts
 declare -A system_prompts
-system_prompts[vocal]="You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful."
+system_prompts[vocal]="You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash."
 system_prompts[transform_clipboard]="You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else."
 
 # pre defined vocal models
@@ -113,13 +113,26 @@ record $FILE
 # sleep 1
 
 # yad form
-instruction=$(yad \
+transf_instruct=$(yad \
     --form \
     --title "Yad Sound Recorder" \
-    --field "ChatGPT instruction" \
+    --text "TASK: $TASK\nLANG: $LANG" \
+    --field "Whisper prompt" "$PROMPT" \
+    --field "ChatGPT instruction" "" \
     --on-top \
-    --button="STOP!gtk-media-stop":0
+    --button="gtk-cancel:1" \
+    --button="Go!gtk-media-stop:0" \
+    --default-button=0
     )
+    #
+# if pressed cancel or escape: exit
+if [[ -z $transf_instruct ]]
+then
+    killall rec
+    log "Pressed cancel or escape. Exiting."
+    exit
+fi
+
 log "\nChatGPT instruction: $transf_instruct for task $TASK"
 
 # kill the recording
@@ -193,7 +206,7 @@ then
 
     fi
 
-    answer=$(openai api chat_completions.create --model gpt-3.5-turbo-1106 -g system $vocal_system_prompt $message_arg -g "user" "$text")
+    answer=$(openai api chat_completions.create --model gpt-3.5-turbo-1106 -g system ${system_prompts[vocal]} $message_arg -g "user" "$text")
     log "ChatGPT answer to the chat: \"$answer\""
 
     # add text and answer to the file
