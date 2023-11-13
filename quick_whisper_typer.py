@@ -5,7 +5,7 @@ import subprocess
 import time
 
 import fire
-import pyperclip3
+import pyclip
 import PySimpleGUI as sg
 import openai
 from pathlib import Path
@@ -34,13 +34,13 @@ def log(message):
 
 def popup(prompt, task, lang):
     title = "Sound Recorder"
-    text = f"TASK: {task}\nLANG: {lang}"
 
     layout = [
-        [sg.Text(text)],
+        [sg.Text(f"TASK: {task}\nLANG: {lang}")],
         [sg.Text("Whisper prompt"), sg.Input(prompt)],
         [sg.Text("ChatGPT instruction"), sg.Input()],
-        [sg.Button("Go!", key="-GO-", button_color="red"), sg.Button("Cancel", key="-CANCEL-", button_color="blue")]
+        [sg.Button("Go!", key="-GO-", button_color="red"),
+         sg.Button("Cancel", key="-CANCEL-", button_color="blue")]
     ]
 
     window = sg.Window(title, layout, keep_on_top=True)
@@ -136,23 +136,23 @@ def main(
     log(f"Whisper transcript: {text}")
 
     if task == "write":
-        clipboard = pyperclip3.paste()
+        clipboard = pyclip.paste()
         if not clipboard:
             log("Clipboard is empty, this is not compatible with the task")
             raise SystemExit()
-        log(f"Clipboard content: '{clipboard}'")
+        log(f"Clipboard previous content: '{clipboard}'")
 
         log("Pasting clipboard")
-        pyperclip3.copy(text)
+        pyclip.copy(text)
         os.system("xdotool key ctrl+v")
-        pyperclip3.copy(clipboard)
+        pyclip.copy(clipboard)
         log("Clipboard reset")
         return
 
     elif task == "transform_clipboard":
         log(f"Calling ChatGPT with instruction \"{text}\" and tasked to transform the clipboard")
 
-        clipboard = str(pyperclip3.paste())
+        clipboard = str(pyclip.paste())
         if not clipboard:
             log("Clipboard is empty, this is not compatible with the task")
             raise SystemExit()
@@ -169,9 +169,9 @@ def main(
         log(f"ChatGPT clipboard transformation: \"{answer}\"")
 
         log("Pasting clipboard")
-        pyperclip3.copy(answer)
+        pyclip.copy(answer)
         os.system("xdotool key ctrl+v")
-        pyperclip3.copy(clipboard)
+        pyclip.copy(clipboard)
         log("Clipboard reset")
         return
 
