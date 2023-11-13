@@ -39,8 +39,10 @@ def popup(prompt, task, lang):
         [sg.Text(f"TASK: {task}\nLANG: {lang}")],
         [sg.Text("Whisper prompt"), sg.Input(prompt)],
         [sg.Text("ChatGPT instruction"), sg.Input()],
-        [sg.Button("Go!", key="-GO-", button_color="red"),
-         sg.Button("Cancel", key="-CANCEL-", button_color="blue")]
+        [
+            sg.Button("Cancel", key="-CANCEL-", button_color="blue"),
+            sg.Button("Go!", key="-GO-", button_color="red"),
+             ]
     ]
 
     window = sg.Window(title, layout, keep_on_top=True)
@@ -242,4 +244,8 @@ def main(
         return
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    try:
+        fire.Fire(main)
+    except Exception as err:
+        os.system("killall rec")
+        raise
