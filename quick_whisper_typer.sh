@@ -6,6 +6,7 @@
 LANG=""
 PROMPT=""
 TASK=""
+VOICE_ENGINE=""
 
 # pre defined prompts
 declare -A prompts
@@ -57,6 +58,10 @@ for arg in "$@"; do
             TASK="$2"
             shift 2
             ;;
+        -v | --voice_engine)
+            VOICE_ENGINE="$2"
+            shift 2
+            ;;
         #*)
         #    echo "Invalid option: $arg"
         #    exit 1
@@ -71,7 +76,17 @@ then
     echo "Invalid lang $LANG not part of $allowed_langs"
     exit 1
 fi
-speaker_model="${speaker_models[$LANG]}"
+
+# check voice engine
+allowed_voice_engine=("openai" "piper")
+if [[ $TASK == *vocal* ]]
+then
+    if [[ ! " ${allowed_voice_engine[@]} " =~ " $VOICE_ENGINE " ]]
+    then
+        log "Invalid voice engine $VOICE_ENGINE not part of $allowed_voice_engine"
+        exit
+    fi
+fi
 
 # selecting prompt based on lang
 if [[ -z "$PROMPT" ]]
@@ -184,26 +199,24 @@ then
         log "Reusing previous vocal chat file: $VOCAL_FILE"
 
         # read the previous message list
-        messages=()
-        IFS="#####"
-        while IFS= read -r line; do
-            trimmed=$(echo "$line" | sed -e 's/^\s\+//' -e 's/\s\+$//')
-            messages+=("$trimmed")
-        done < $VOCAL_FILE
+        messages=("${(s:#####:)$(<$VOCAL_FILE)}")
 
         # parse the message as a long arg string
         message_arg=""
+        i=0
         for element in "${messages[@]}"; do
-            read -r -a fields <<< "$element"
-            for ((i = 0; i < ${#fields[@]}; i++)); do
-                if ((i % 2 == 0)); then
-                    role="user"
-                else
-                    role="assistant"
-                fi
-                message_arg+="-g $role \"${fields[i]}\" "
-            done
+            i=$(($i+1))
+            if ((i % 2 == 0)); then
+                role="user"
+            else
+                role="assistant"
+            fi
+            echo $element
+            trimmed=$(echo "$element" | sed -e 's/[[:space:]]\*$//' | rev | sed -e 's/[[:space:]]\*$//' | rev)
+            message_arg+="-g $role \"$trimmed\" "
         done
+        echo $message_arg
+        exit
 
     fi
 
@@ -219,7 +232,15 @@ then
     # play vocal file
     VOCAL_FILE_MP3="/tmp/quick_whisper_piper_$(date +%s).mp3"
     log "storing vocal mp3 to $VOCAL_FILE_MP3"
-    echo "$answer" | python -m piper --model $speaker_model --output_file $VOCAL_FILE_MP3 2&>1
+    if [[ $VOICE_ENGINE == "piper" ]]
+    then
+        speaker_model="${speaker_models[$LANG]}"
+        echo "$answer" | python -m piper --model $speaker_model --output_file $VOCAL_FILE_MP3 2&>1
+    else
+        pyenv local latest_openai
+        python -m ospeak $answer --output $VOCAL_FILE_MP3
+        pyenv local --unset
+    fi
     mplayer -really-quiet $VOCAL_FILE_MP3 2&>1
     log "done playing vocal file"
 
