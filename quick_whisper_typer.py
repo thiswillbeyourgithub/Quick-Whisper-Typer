@@ -54,6 +54,7 @@ def popup(prompt, task, lang):
         return whisper_prompt, chatgpt_instruction
     else:
         log("Pressed cancel or escape. Exiting.")
+        subprocess.run(["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         raise SystemExit()
 
 def main(
