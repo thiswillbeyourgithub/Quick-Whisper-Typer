@@ -149,7 +149,7 @@ def main(
         return
 
     elif task == "transform_clipboard":
-        log(f"Calling ChatGPT with instruction \"{chatgpt_instruction}\" and tasked to transform the clipboard")
+        log(f"Calling ChatGPT with instruction \"{text}\" and tasked to transform the clipboard")
 
         clipboard = str(pyperclip3.paste())
         if not clipboard:
@@ -161,7 +161,7 @@ def main(
             model="gpt-3.5-turbo-1106",
             messages=[
                 {"role": "system", "content": system_prompts["transform_clipboard"]},
-                {"role": "user", "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{chatgpt_instruction}'"}
+                {"role": "user", "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'"}
             ]
         )
         answer = chatgpt_response["choices"][0]["message"]["content"]
