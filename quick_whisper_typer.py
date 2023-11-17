@@ -9,6 +9,7 @@ import pyclip
 import PySimpleGUI as sg
 import openai
 from pathlib import Path
+import pyautogui
 
 # Set up variables and prompts
 prompts = {
@@ -145,6 +146,7 @@ def main(
         log(f"Clipboard previous content: '{clipboard}'")
 
         log("Pasting clipboard")
+        pyautogui.click()
         pyclip.copy(text)
         os.system("xdotool key ctrl+v")
         pyclip.copy(clipboard)
@@ -171,6 +173,7 @@ def main(
         log(f"ChatGPT clipboard transformation: \"{answer}\"")
 
         log("Pasting clipboard")
+        pyautogui.click()
         pyclip.copy(answer)
         os.system("xdotool key ctrl+v")
         pyclip.copy(clipboard)
