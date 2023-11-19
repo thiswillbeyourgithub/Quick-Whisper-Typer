@@ -65,7 +65,6 @@ def main(
         task,
         voice_engine="espeak",
         prompt=None,
-        **kwargs,
         ):
     """
     Parameters
@@ -79,7 +78,6 @@ def main(
     prompt
         default to None
     """
-    print("in")
     # Checking if the language is supplied and correct
     allowed_langs = ("fr", "en")
     assert lang != "" and lang in allowed_langs, (
@@ -95,7 +93,8 @@ def main(
         prompt = prompts[lang]
     
     # Checking that the task is allowed
-    allowed_tasks = ("transform_clipboard", "voice_chat", "write")
+    task = task.replace("-", "_").lower()
+    allowed_tasks = ("transform_clipboard", "new_voice_chat", "continue_voice_chat", "write")
     assert task != "" and task in allowed_tasks, f"Invalid task {task} not part of {allowed_tasks}"
 
     log(f"Will use language {lang} and prompt {prompt} and task {task}")
@@ -180,8 +179,8 @@ def main(
         log("Clipboard reset")
         return
 
-    elif task == "voice_chat":
-        if "new" in kwargs:
+    elif "voice_chat" in task:
+        if "new" in task:
             voice_file = f"/tmp/quick_whisper_chat_{int(time.time())}.txt"
             log(f"Creating new voice chat file: {voice_file}")
 
@@ -189,7 +188,7 @@ def main(
                     {"role": "system", "content": system_prompts["voice"]},
                     ]
 
-        elif "continue" in kwargs:
+        elif "continue" in task:
             voice_files = [f for f in Path("/tmp").iterdir() if f.name.startswith("quick_whisper_chat_")]
             voice_files = sorted(voice_files, key=lambda x: x.stat().st_ctime)
             voice_file = voice_files[-1]
@@ -212,7 +211,7 @@ def main(
                     else:
                         messages.append({"role": role, "content": line})
         else:
-            raise ValueError(kwargs)
+            raise ValueError(task)
 
 
         messages.append({"role": "user", "content": text})
