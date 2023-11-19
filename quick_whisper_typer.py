@@ -224,16 +224,21 @@ def main(
         log(f"ChatGPT answer to the chat: \"{answer}\"")
 
 
+        if voice_engine == "piper":
+            try:
+                vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
+                subprocess.run(
+                        ["echo", answer, "|", "python", "-m", "piper", "--model", speaker_models[lang], "--output_file", vocal_file_mp3])
+
+                log(f"Playing voice file: {vocal_file_mp3}")
+                playsound(vocal_file_mp3)
+            except Exception as err:
+                log(f"Error when using piper so will use espeak: '{err}'")
+                voice_engine = "espeak"
+
         if voice_engine == "espeak":
             subprocess.run(
                     ["espeak", "-v", lang, answer])
-        elif voice_engine == "piper":
-            vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
-            subprocess.run(
-                    ["echo", answer, "|", "python", "-m", "piper", "--model", speaker_models[lang], "--output_file", vocal_file_mp3])
-
-            log(f"Playing voice file: {vocal_file_mp3}")
-            playsound(vocal_file_mp3)
         else:
             raise NotImplementedError()
 
