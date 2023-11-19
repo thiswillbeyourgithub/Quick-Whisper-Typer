@@ -245,7 +245,7 @@ def main(
 
         if voice_engine == "espeak":
             subprocess.run(
-                    ["espeak", "-v", lang, answer])
+                    ["espeak", "-v", lang, "-p", "20", "-s", "110", "-z", answer])
 
         # Add text and answer to the file
         with open(voice_file, "a") as f:
