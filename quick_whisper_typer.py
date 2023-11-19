@@ -223,12 +223,12 @@ def main(
         answer = chatgpt_response["choices"][0]["message"]["content"]
         log(f"ChatGPT answer to the chat: \"{answer}\"")
 
-        vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
 
         if voice_engine == "espeak":
             subprocess.run(
                     ["espeak", "-v", lang, answer])
         elif voice_engine == "piper":
+            vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
             subprocess.run(
                     ["echo", answer, "|", "python", "-m", "piper", "--model", speaker_models[lang], "--output_file", vocal_file_mp3])
 
