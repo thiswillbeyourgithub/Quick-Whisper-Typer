@@ -236,11 +236,16 @@ def main(
                 log(f"Error when using piper so will use espeak: '{err}'")
                 voice_engine = "espeak"
 
+        if voice_engine == "openai":
+            try:
+                raise NotImplementedError()
+            except Exception as err:
+                log(f"Error when using piper so will use espeak: '{err}'")
+                voice_engine = "espeak"
+
         if voice_engine == "espeak":
             subprocess.run(
                     ["espeak", "-v", lang, answer])
-        else:
-            raise NotImplementedError()
 
         # Add text and answer to the file
         with open(voice_file, "a") as f:
