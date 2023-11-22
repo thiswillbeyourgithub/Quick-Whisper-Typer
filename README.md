@@ -1,5 +1,5 @@
 # Quick Whisper Typer
-Super simple zsh script to start recording sound, send it to whisper then have it type for you in a field. Can be used to transform the clipboard too. Latency is <2s and sometimes <1s.
+Super simple python script to start recording sound, send it to whisper then have it type for you in a field. Can be used to transform the clipboard too. Latency is <2s and sometimes <1s.
 
 ## The way this works
 1. Move your cursor to where you want the output to be.
@@ -12,26 +12,29 @@ Super simple zsh script to start recording sound, send it to whisper then have i
 
 ## Features
 * Choose the language via `--language`
-* Specify a whisper prompt via `--prompt`
+* Specify a whisper prompt in advance via `--prompt`
 * If you use `--task=transform_clipboard`, then ChatGPT will be tasked to transform the content of your clipboard according to the instruction you told to whisper.
+* If you use `--task=new_voice_chat` you will start a voice chat with the specified `voice_engine` used to give you back the answers. Implemented voice engines are `espeak`, `piper` and `openai`. You can continue the vocal chat indefinitely by using `task=continue_voice_chat`.
 * Removes long silences via sox
 
 ## How to
 * Put your OpenAI api key in a file called API_KEY.txt
 * *optional: add a keyboard shortcut to call this script. See my i3 bindings below.*
-* `chmod +x ./quick_whisper_typer.sh`
-* `./quick_whisper_typer.sh --language en`
+* `chmod +x ./quick_whisper_typer.py`
+* `./quick_whisper_typer.py --language en`
 
 ### i3 bindings
 ```
 mode "$mode_launch_microphone" {
     # enter text
-    bindsym f exec /PATH/TO/Yad_Quick_Microphone.sh --language en, mode "default
+    bindsym f exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task write, mode "default
     # edit clipboard
-    bindsym e exec /PATH/TO/Yad_Quick_Microphone.sh --language en --task=transform_clipboard, mode "default"
+    bindsym e exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=transform_clipboard, mode "default"
+    bindsym v exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=continue_voice_chat, mode "default"
+    bindsym shift+V exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=new_voice_chat, mode "default"
 
     bindsym Return mode "default"
     bindsym Escape mode "default"
-    bindsym $alt+shift+r mode "default"
+    bindsym $alt+pyift+r mode "default"
     }
 ```
