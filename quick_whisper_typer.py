@@ -1,3 +1,4 @@
+import json
 from playsound import playsound
 import tempfile
 import os
@@ -7,9 +8,13 @@ import time
 import fire
 import pyclip
 import PySimpleGUI as sg
-import openai
+from openai import OpenAI
+
 from pathlib import Path
 import pyautogui
+
+# Load OpenAI api key from file
+client = OpenAI(api_key=open("API_KEY.txt", "r").read().strip())
 
 # Set up variables and prompts
 prompts = {
@@ -25,8 +30,6 @@ speaker_models = {
     "en": "en_US-lessac-medium"
 }
 
-# Load OpenAI api key from file
-openai.api_key = open("API_KEY.txt", "r").read().strip()
 
 def log(message):
     print(message)
@@ -128,13 +131,13 @@ def main(
     # Call whisper
     log("Calling whisper")
     with open(file, "rb") as f:
-        transcript_response = openai.Audio.transcribe(
+        transcript_response = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=f,
                 language=lang,
                 prompt=whisper_prompt,
                 temperature=0)
-    text = transcript_response["text"]
+    text = transcript_response.text
     log(f"Whisper transcript: {text}")
 
     if task == "write":
@@ -161,14 +164,14 @@ def main(
             raise SystemExit()
         log(f"Clipboard content: '{clipboard}'")
 
-        chatgpt_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-1106",
-            messages=[
-                {"role": "system", "content": system_prompts["transform_clipboard"]},
-                {"role": "user", "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'"}
-            ]
-        )
-        answer = chatgpt_response["choices"][0]["message"]["content"]
+        chatgpt_response = client.chat.completions.create(
+                model="gpt-3.5-turbo-1106",
+                messages=[
+                    {"role": "system", "content": system_prompts["transform_clipboard"]},
+                    {"role": "user", "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'"}
+                    ]
+                )
+        answer = json.loads(chatgpt_response.json())["choices"][0]["message"]["content"]
         log(f"ChatGPT clipboard transformation: \"{answer}\"")
 
         log("Pasting clipboard")
@@ -217,16 +220,16 @@ def main(
         messages.append({"role": "user", "content": text})
 
         log(f"Calling ChatGPT with messages: '{messages}'")
-        chatgpt_response = openai.ChatCompletion.create(
+        chatgpt_response = client.chat.completions.create(
                 model="gpt-3.5-turbo-1106",
                 messages=messages)
-        answer = chatgpt_response["choices"][0]["message"]["content"]
+        answer = json.loads(chatgpt_response.json())["choices"][0]["message"]["content"]
         log(f"ChatGPT answer to the chat: \"{answer}\"")
 
 
+        vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
         if voice_engine == "piper":
             try:
-                vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
                 subprocess.run(
                         ["echo", answer, "|", "python", "-m", "piper", "--model", speaker_models[lang], "--output_file", vocal_file_mp3])
 
@@ -238,9 +241,17 @@ def main(
 
         if voice_engine == "openai":
             try:
-                raise NotImplementedError()
+                response = client.audio.speech.create(
+                        model="tts-1",
+                        voice="echo",
+                        input=answer,
+                        response_format="mp3",
+                        speed=1,
+                        )
+                response.stream_to_file(vocal_file_mp3)
+                playsound(vocal_file_mp3)
             except Exception as err:
-                log(f"Error when using piper so will use espeak: '{err}'")
+                log(f"Error when using openai so will use espeak: '{err}'")
                 voice_engine = "espeak"
 
         if voice_engine == "espeak":
