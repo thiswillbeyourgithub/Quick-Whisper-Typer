@@ -115,6 +115,8 @@ def main(
 
     # Show recording form
     whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
+    if chatgpt_instruction:
+        raise NotImplementedError("Chatgpt_instruction is not yet implemented")
 
     # Kill the recording
     subprocess.run(["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
