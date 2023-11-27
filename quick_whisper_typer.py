@@ -68,6 +68,7 @@ def main(
         task,
         voice_engine="espeak",
         prompt=None,
+        daemon_mode=False,
         ):
     """
     Parameters
@@ -80,6 +81,9 @@ def main(
         piper, openai, espeak
     prompt
         default to None
+    daemon_mode
+        default to False. Designed for loop.py Is either False or a queue
+        that stops listening when an item is received.
     """
     # Checking if the language is supplied and correct
     allowed_langs = ("fr", "en")
@@ -114,7 +118,12 @@ def main(
     subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
 
     # Show recording form
-    whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
+    if daemon_mode is False:
+        whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
+    else:
+        if daemon_mode.get() == "STOP":
+            whisper_prompt = prompt
+            chatgpt_instruction = ""
     if chatgpt_instruction:
         raise NotImplementedError("Chatgpt_instruction is not yet implemented")
 
