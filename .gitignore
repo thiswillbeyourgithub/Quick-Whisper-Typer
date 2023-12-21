@@ -1,0 +1,6 @@
+.env*
+*onnx
+*onnx.json
+*.log
+*pycache*
+API_KEY.txt
