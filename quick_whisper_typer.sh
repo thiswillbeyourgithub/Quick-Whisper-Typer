@@ -262,5 +262,9 @@ log "using clipboard to write"
 echo "$text" | xclip -sel primary
 echo "$text" | xclip -sel secondary
 echo "$text" | xclip -sel clipoard
+
+# paste
 xdotool key ctrl+v
+
+# restore clipboard
 echo "$prev_clipboard" | xclip -sel clipboard
