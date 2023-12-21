@@ -13,6 +13,7 @@ from openai import OpenAI
 
 from pathlib import Path
 import pyautogui
+from pynput import keyboard
 
 # Load OpenAI api key from file
 client = OpenAI(api_key=open("API_KEY.txt", "r").read().strip())
@@ -68,6 +69,7 @@ def main(
         lang,
         task,
         auto_paste=False,
+        gui=False,
         voice_engine="espeak",
         prompt=None,
         daemon_mode=False,
@@ -82,6 +84,9 @@ def main(
     auto_paste, default False
         if True, will use xdotool to paste directly. Otherwise just plays
         a sound to tell you that the clipboard was filled.
+    gui, default to False
+        if True, a window will open to allow to enter specific prompts etc
+        if False, no window is used and you have to press shift to stop the recording.
     voice_engine
         piper, openai, espeak
     prompt
@@ -89,6 +94,7 @@ def main(
     daemon_mode
         default to False. Designed for loop.py Is either False or a queue
         that stops listening when an item is received.
+        if True, gui argument is ignored
     """
     # Checking if the language is supplied and correct
     allowed_langs = ("fr", "en")
@@ -122,13 +128,27 @@ def main(
     log(f"Recording {file}")
     subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
 
-    # Show recording form
-    if daemon_mode is False:
-        whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
-    else:
+    if daemon_mode is not False:
         if daemon_mode.get() == "STOP":
             whisper_prompt = prompt
             chatgpt_instruction = ""
+    elif gui is True:
+        # Show recording form
+        whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
+    else:
+        def released_shift(key):
+            if key ==  keyboard.Key.shift:
+                log("Pressed shift.")
+                return False
+
+        listener = keyboard.Listener(on_release=released_shift)
+        whisper_prompt = prompt
+        chatgpt_instruction = ""
+
+        listener.start()  # non blocking
+        log("Shortcut listener started, press shift to exit")
+        listener.join()  # blocking
+
     if chatgpt_instruction:
         raise NotImplementedError("Chatgpt_instruction is not yet implemented")
 
@@ -136,6 +156,8 @@ def main(
     subprocess.run(["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     end_time = time.time()
     log(f"Done recording {file}")
+    if gui is False:
+        beepy.beep()
 
     # Check duration
     duration = end_time - start_time
