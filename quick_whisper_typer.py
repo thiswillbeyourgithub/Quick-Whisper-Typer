@@ -1,4 +1,3 @@
-import beepy
 import json
 from playsound import playsound
 import tempfile
@@ -126,7 +125,7 @@ def main(
 
     # Start recording
     log(f"Recording {file}")
-    playsound("Slick.ogg")
+    playsound("sounds/Slick.ogg")
     subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
 
     if daemon_mode is not False:
@@ -158,7 +157,7 @@ def main(
     end_time = time.time()
     log(f"Done recording {file}")
     if gui is False:
-        beepy.beep()
+        playsound("sounds/Rhodes.ogg")
 
     # Check duration
     duration = end_time - start_time
@@ -193,8 +192,7 @@ def main(
             os.system("xdotool key ctrl+v")
             pyclip.copy(clipboard)
             log("Clipboard reset")
-        else:
-            beepy.beep()
+        playsound("sounds/Positive.ogg")
         return
 
     elif task == "transform_clipboard":
@@ -223,8 +221,7 @@ def main(
             os.system("xdotool key ctrl+v")
             pyclip.copy(clipboard)
             log("Clipboard reset")
-        else:
-            beepy.beep()
+        playsound("sounds/Positive.ogg")
         return
 
     elif "voice_chat" in task:

@@ -41,5 +41,5 @@ mode "$mode_launch_microphone" {
     }
 ```
 
-### Credits
-* `Slick.ogg` was a file I found in /usr/share/sounds/ubuntu/notifications
+# Credits
+* `.ogg` files were in my `/usr/share/sounds/ubuntu/notifications` folder.

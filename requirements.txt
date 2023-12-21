@@ -5,5 +5,4 @@ pysimplegui>=4.60.5
 pyautogui>=0.9.54
 openai==1.2.3
 pynput>=1.7.6
-beepy>=1.0.7
 pynput>=1.7.6
