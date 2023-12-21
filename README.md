@@ -40,3 +40,6 @@ mode "$mode_launch_microphone" {
     bindsym $alt+pyift+r mode "default"
     }
 ```
+
+### Credits
+* `Slick.ogg` was a file I found in /usr/share/sounds/ubuntu/notifications

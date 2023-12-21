@@ -126,6 +126,7 @@ def main(
 
     # Start recording
     log(f"Recording {file}")
+    playsound("Slick.ogg")
     subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
 
     if daemon_mode is not False:
