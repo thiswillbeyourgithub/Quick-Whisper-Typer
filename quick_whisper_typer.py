@@ -1,3 +1,4 @@
+import beepy
 import json
 from playsound import playsound
 import tempfile
@@ -66,6 +67,7 @@ def popup(prompt, task, lang):
 def main(
         lang,
         task,
+        auto_paste=False,
         voice_engine="espeak",
         prompt=None,
         daemon_mode=False,
@@ -77,6 +79,9 @@ def main(
         fr, en
     task
         transform_clipboard, write, voice_chat
+    auto_paste, default False
+        if True, will use xdotool to paste directly. Otherwise just plays
+        a sound to tell you that the clipboard was filled.
     voice_engine
         piper, openai, espeak
     prompt
@@ -161,9 +166,12 @@ def main(
         log("Pasting clipboard")
         pyautogui.click()
         pyclip.copy(text)
-        os.system("xdotool key ctrl+v")
-        pyclip.copy(clipboard)
-        log("Clipboard reset")
+        if auto_paste:
+            os.system("xdotool key ctrl+v")
+            pyclip.copy(clipboard)
+            log("Clipboard reset")
+        else:
+            beepy.beep()
         return
 
     elif task == "transform_clipboard":
@@ -188,9 +196,12 @@ def main(
         log("Pasting clipboard")
         pyautogui.click()
         pyclip.copy(answer)
-        os.system("xdotool key ctrl+v")
-        pyclip.copy(clipboard)
-        log("Clipboard reset")
+        if auto_paste:
+            os.system("xdotool key ctrl+v")
+            pyclip.copy(clipboard)
+            log("Clipboard reset")
+        else:
+            beepy.beep()
         return
 
     elif "voice_chat" in task:
