@@ -1,3 +1,4 @@
+from plyer import notification
 import json
 from playsound import playsound
 import tempfile
@@ -36,6 +37,10 @@ def log(message):
     print(message)
     with open("texts.log", "a") as f:
         f.write(f"{int(time.time())} {message}\n")
+    return message
+
+def notif(message):
+    notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
 def popup(prompt, task, lang):
     title = "Sound Recorder"
@@ -200,7 +205,7 @@ def main(
 
         clipboard = str(pyclip.paste())
         if not clipboard:
-            log("Clipboard is empty, this is not compatible with the task")
+            notif(log("Clipboard is empty, this is not compatible with the task"))
             raise SystemExit()
         log(f"Clipboard content: '{clipboard}'")
 
@@ -267,6 +272,7 @@ def main(
                 messages=messages)
         answer = json.loads(chatgpt_response.json())["choices"][0]["message"]["content"]
         log(f"ChatGPT answer to the chat: \"{answer}\"")
+        notif(answer)
 
 
         vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix='.mp3').name
@@ -278,7 +284,7 @@ def main(
                 log(f"Playing voice file: {vocal_file_mp3}")
                 playsound(vocal_file_mp3)
             except Exception as err:
-                log(f"Error when using piper so will use espeak: '{err}'")
+                notif(log(f"Error when using piper so will use espeak: '{err}'"))
                 voice_engine = "espeak"
 
         if voice_engine == "openai":
@@ -293,7 +299,7 @@ def main(
                 response.stream_to_file(vocal_file_mp3)
                 playsound(vocal_file_mp3)
             except Exception as err:
-                log(f"Error when using openai so will use espeak: '{err}'")
+                notif(log(f"Error when using openai so will use espeak: '{err}'"))
                 voice_engine = "espeak"
 
         if voice_engine == "espeak":
