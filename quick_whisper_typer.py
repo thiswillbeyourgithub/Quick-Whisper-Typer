@@ -319,4 +319,5 @@ if __name__ == "__main__":
         fire.Fire(main)
     except Exception as err:
         os.system("killall rec")
+        notif(f"Error: {err}")
         raise
