@@ -75,7 +75,7 @@ def main(
         model="gpt-3.5-turbo-1106",
         auto_paste=False,
         gui=False,
-        voice_engine="espeak",
+        voice_engine=None,
         prompt=None,
         daemon_mode=False,
         ):
@@ -92,8 +92,8 @@ def main(
     gui, default to False
         if True, a window will open to allow to enter specific prompts etc
         if False, no window is used and you have to press shift to stop the recording.
-    voice_engine
-        piper, openai, espeak
+    voice_engine, default None
+        piper, openai, espeak, None
     prompt
         default to None
     daemon_mode
@@ -107,7 +107,9 @@ def main(
         f"Invalid lang {lang} not part of {allowed_langs}")
 
     # Checking voice engine
-    allowed_voice_engine = ("openai", "piper", "espeak")
+    if voice_engine == "None":
+        voice_engine = None
+    allowed_voice_engine = ("openai", "piper", "espeak", None)
     assert "voice" not in task or voice_engine in allowed_voice_engine, (
         f"Invalid voice engine {voice_engine} not part of {allowed_voice_engine}")
 
@@ -305,6 +307,9 @@ def main(
         if voice_engine == "espeak":
             subprocess.run(
                     ["espeak", "-v", lang, "-p", "20", "-s", "110", "-z", answer])
+
+        if voice_engine is None:
+            log("voice_engine is None so not speaking.")
 
         # Add text and answer to the file
         with open(voice_file, "a") as f:
