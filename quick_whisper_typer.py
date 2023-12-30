@@ -72,6 +72,7 @@ def popup(prompt, task, lang):
 def main(
         lang,
         task,
+        model="gpt-3.5-turbo-1106",
         auto_paste=False,
         gui=False,
         voice_engine="espeak",
@@ -209,7 +210,7 @@ def main(
         log(f"Clipboard content: '{clipboard}'")
 
         chatgpt_response = client.chat.completions.create(
-                model="gpt-3.5-turbo-1106",
+                model=model,
                 messages=[
                     {"role": "system", "content": system_prompts["transform_clipboard"]},
                     {"role": "user", "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'"}
@@ -267,7 +268,7 @@ def main(
 
         log(f"Calling ChatGPT with messages: '{messages}'")
         chatgpt_response = client.chat.completions.create(
-                model="gpt-3.5-turbo-1106",
+                model=model,
                 messages=messages)
         answer = json.loads(chatgpt_response.json())["choices"][0]["message"]["content"]
         log(f"ChatGPT answer to the chat: \"{answer}\"")
