@@ -311,6 +311,8 @@ def main(
             f.write("\n#####\n")
             f.write(f"{answer}\n")
 
+    log("Done.")
+
 if __name__ == "__main__":
     try:
         fire.Fire(main)
