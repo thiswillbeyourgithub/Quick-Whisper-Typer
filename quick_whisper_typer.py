@@ -171,7 +171,7 @@ def main(
     duration = end_time - start_time
     log(f"Duration {duration}")
     if duration < min_duration:
-        log(f"Recording too short ({duration} s), exiting without calling whisper.")
+        notif(log(f"Recording too short ({duration} s), exiting without calling whisper."))
         raise SystemExit()
     
     # Call whisper
