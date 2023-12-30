@@ -181,7 +181,7 @@ def main(
                 prompt=whisper_prompt,
                 temperature=0)
     text = transcript_response.text
-    log(f"Whisper transcript: {text}")
+    notif(log(f"Transcript: {text}"))
 
     if task == "write":
         clipboard = pyclip.paste()
