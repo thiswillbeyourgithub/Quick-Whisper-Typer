@@ -221,6 +221,7 @@ def main(
         log("Pasting clipboard")
         pyautogui.click()
         pyclip.copy(answer)
+        notif(answer)
         if auto_paste:
             os.system("xdotool key ctrl+v")
             pyclip.copy(clipboard)
