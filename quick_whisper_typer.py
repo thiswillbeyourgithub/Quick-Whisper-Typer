@@ -198,7 +198,6 @@ def main(
             pyclip.copy(clipboard)
             log("Clipboard reset")
         playsound("sounds/Positive.ogg")
-        return
 
     elif task == "transform_clipboard":
         log(f"Calling ChatGPT with instruction \"{text}\" and tasked to transform the clipboard")
@@ -227,7 +226,6 @@ def main(
             pyclip.copy(clipboard)
             log("Clipboard reset")
         playsound("sounds/Positive.ogg")
-        return
 
     elif "voice_chat" in task:
         if "new" in task:
@@ -312,7 +310,6 @@ def main(
             f.write(f"{text}\n")
             f.write("\n#####\n")
             f.write(f"{answer}\n")
-        return
 
 if __name__ == "__main__":
     try:
