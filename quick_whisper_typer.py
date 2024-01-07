@@ -20,8 +20,10 @@ client = OpenAI(api_key=open("API_KEY.txt", "r").read().strip())
 
 # Set up variables and prompts
 prompts = {
-    "fr": "Dictee voicee sur mon telephone: ",
-    "en": "Dictation on my smartphone: "
+    "fr": None,
+    "en": None,
+    # "fr": "Dictee voicee sur mon telephone: ",
+    # "en": "Dictation on my smartphone: "
 }
 system_prompts = {
     "voice": "You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash.",
