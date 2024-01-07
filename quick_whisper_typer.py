@@ -12,7 +12,7 @@ import PySimpleGUI as sg
 from openai import OpenAI
 
 from pathlib import Path
-import pyautogui
+# import pyautogui
 from pynput import keyboard
 
 # Load OpenAI api key from file
@@ -194,7 +194,7 @@ def main(
         log(f"Clipboard previous content: '{clipboard}'")
 
         log("Pasting clipboard")
-        pyautogui.click()
+        # pyautogui.click()
         pyclip.copy(text)
         if auto_paste:
             os.system("xdotool key ctrl+v")
@@ -222,7 +222,7 @@ def main(
         log(f"ChatGPT clipboard transformation: \"{answer}\"")
 
         log("Pasting clipboard")
-        pyautogui.click()
+        # pyautogui.click()
         pyclip.copy(answer)
         notif(answer)
         if auto_paste:
