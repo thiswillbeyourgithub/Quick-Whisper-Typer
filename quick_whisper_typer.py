@@ -1,16 +1,10 @@
-import soundfile as sf
-import torchaudio
-from plyer import notification
 import json
-from playsound import playsound
 import tempfile
 import os
 import subprocess
 import time
 
 import fire
-import pyclip
-import PySimpleGUI as sg
 from openai import OpenAI
 
 from pathlib import Path
@@ -70,9 +64,11 @@ def log(message):
     return message
 
 def notif(message):
+    from plyer import notification
     notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
 def popup(prompt, task, lang):
+    import PySimpleGUI as sg
     title = "Sound Recorder"
 
     layout = [
@@ -167,6 +163,7 @@ class QuickWhisper:
         # Start recording
         log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
+        from playsound import playsound
         playsound("sounds/Slick.ogg")
 
         if daemon_mode is not False:
@@ -188,6 +185,11 @@ class QuickWhisper:
 
             listener.start()  # non blocking
             log("Shortcut listener started, press shift to exit")
+
+            # import last minute to be quicker to launch
+            import soundfile as sf
+            import torchaudio
+
             listener.join()  # blocking
 
         if chatgpt_instruction:
@@ -229,6 +231,8 @@ class QuickWhisper:
                     temperature=0)
         text = transcript_response.text
         notif(log(f"Transcript: {text}"))
+
+        import pyclip
 
         if task == "write":
             clipboard = pyclip.paste()
