@@ -15,7 +15,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * Specify a whisper prompt in advance via `--prompt`
 * If you use `--task=transform_clipboard`, then ChatGPT will be tasked to transform the content of your clipboard according to the instruction you told to whisper.
 * If you use `--task=new_voice_chat` you will start a voice chat with the specified `voice_engine` used to give you back the answers. Implemented voice engines are `espeak`, `piper` and `openai`. You can continue the vocal chat indefinitely by using `task=continue_voice_chat`.
-* Removes long silences via sox
+* Audio cleanup and removes long silences via sox
 * `loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
 * argument `auto_paste` can be set to False to make a bell sound to tell you that the answer was sent to the clipboard instead of pasting it directly.
 
