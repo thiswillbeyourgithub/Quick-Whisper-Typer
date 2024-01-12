@@ -1,3 +1,5 @@
+import soundfile as sf
+import torchaudio
 from plyer import notification
 import json
 from playsound import playsound
@@ -33,6 +35,32 @@ speaker_models = {
     "fr": "fr_FR-gilles-low",
     "en": "en_US-lessac-medium"
 }
+
+sox_cleanup = [
+        # isolate voice frequency
+        # -2 is for a steeper filtering
+        ["highpass", "-1", "100"],
+        ["lowpass", "-1", "3000"],
+        # removes high frequency and very low ones
+        ["highpass", "-2", "50"],
+        ["lowpass", "-2", "5000"],
+        # # normalize audio
+        ["norm"],
+
+        # max silence should be 1s
+        ["silence", "-l", "1", "0", "0.5%", "-1", "1.0", "0.1%"],
+
+        # # remove leading silence
+        # ["vad", "-p", "0.2", "-t", "5"],
+        # # # and ending silence, this might be unecessary for splitted audio
+        # ["reverse"],
+        # ["vad", "-p", "0.2", "-t", "5"],
+        # ["reverse"],
+
+        # add blank sound to help whisper
+        ["pad", "0.2@0"],
+        ]
+
 
 
 def log(message):
@@ -172,13 +200,24 @@ class QuickWhisper:
         if gui is False:
             playsound("sounds/Rhodes.ogg")
 
+        # clean up the sound
+        log("Cleaning up sound")
+        waveform, sample_rate = torchaudio.load(file)
+        waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
+                waveform,
+                sample_rate,
+                sox_cleanup,
+                )
+        file = file.replace(".mp3", "") + "_clean.wav"
+        sf.write(str(file), waveform.numpy().T, sample_rate, format='mp3')
+
         # Check duration
         duration = end_time - start_time
         log(f"Duration {duration}")
         if duration < min_duration:
             notif(log(f"Recording too short ({duration} s), exiting without calling whisper."))
             raise SystemExit()
-        
+
         # Call whisper
         log("Calling whisper")
         with open(file, "rb") as f:

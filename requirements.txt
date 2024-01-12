@@ -6,4 +6,9 @@ pysimplegui>=4.60.5
 openai==1.2.3
 pynput>=1.7.6
 pynput>=1.7.6
-plyer >= 2.0.0
+plyer>=2.0.0
+
+# used to clean up audio
+torchaudio>=2.1.2
+soundfile>=0.12.1
+numpy>=1.26.3
