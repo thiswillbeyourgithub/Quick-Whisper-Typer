@@ -163,6 +163,7 @@ class QuickWhisper:
         # Start recording
         log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
+        time.sleep(0.2)  # delay to properly recod
         from playsound import playsound
         playsound("sounds/Slick.ogg")
 
@@ -177,6 +178,7 @@ class QuickWhisper:
             def released_shift(key):
                 if key ==  keyboard.Key.shift:
                     log("Pressed shift.")
+                    time.sleep(1)
                     return False
 
             listener = keyboard.Listener(on_release=released_shift)
