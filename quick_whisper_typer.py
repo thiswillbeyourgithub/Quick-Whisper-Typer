@@ -209,14 +209,18 @@ class QuickWhisper:
         # fast if already imported
         import soundfile as sf
         import torchaudio
-        waveform, sample_rate = torchaudio.load(file)
-        waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
-                waveform,
-                sample_rate,
-                sox_cleanup,
-                )
-        file = file.replace(".mp3", "") + "_clean.wav"
-        sf.write(str(file), waveform.numpy().T, sample_rate, format='mp3')
+        try:
+            waveform, sample_rate = torchaudio.load(file)
+            waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
+                    waveform,
+                    sample_rate,
+                    sox_cleanup,
+                    )
+            file2 = file.replace(".mp3", "") + "_clean.wav"
+            sf.write(str(file2), waveform.numpy().T, sample_rate, format='mp3')
+            file = file2
+        except Exception as err:
+            log(f"Error when cleaning up sound: {err}")
 
         # Check duration
         duration = end_time - start_time
