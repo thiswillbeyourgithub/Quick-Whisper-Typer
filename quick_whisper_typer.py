@@ -206,6 +206,9 @@ class QuickWhisper:
 
         # clean up the sound
         log("Cleaning up sound")
+        # fast if already imported
+        import soundfile as sf
+        import torchaudio
         waveform, sample_rate = torchaudio.load(file)
         waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
                 waveform,
