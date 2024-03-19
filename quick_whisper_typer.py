@@ -120,6 +120,7 @@ class QuickWhisper:
         model="openai/gpt-3.5-turbo-0125",
         auto_paste=False,
         gui=False,
+        sound_cleanup=False,
         voice_engine=None,
         whisper_prompt=None,
         LLM_instruction=None,
@@ -139,6 +140,8 @@ class QuickWhisper:
         gui, default to False
             if True, a window will open to allow to enter specific prompts etc
             if False, no window is used and you have to press shift to stop the recording.
+        sound_cleanup: bool, default False
+            if True, will try to clean up the sound before sending it to whisper
         voice_engine, default None
             piper, openai, espeak, None
         whisper_prompt: str
@@ -242,22 +245,25 @@ class QuickWhisper:
 
         # clean up the sound
         log("Cleaning up sound")
-        # fast if already imported
-        import soundfile as sf
-        import torchaudio
 
-        try:
-            waveform, sample_rate = torchaudio.load(file)
-            waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
-                waveform,
-                sample_rate,
-                sox_cleanup,
-            )
-            file2 = file.replace(".mp3", "") + "_clean.wav"
-            sf.write(str(file2), waveform.numpy().T, sample_rate, format="mp3")
-            file = file2
-        except Exception as err:
-            log(f"Error when cleaning up sound: {err}")
+        if sound_cleanup:
+            # fast if already imported
+            import soundfile as sf
+            import torchaudio
+
+            try:
+                waveform, sample_rate = torchaudio.load(file)
+                waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
+                    waveform,
+                    sample_rate,
+                    sox_cleanup,
+                )
+                file2 = file.replace(".mp3", "") + "_clean.wav"
+                sf.write(str(file2), waveform.numpy().T,
+                         sample_rate, format="wav")
+                file = file2
+            except Exception as err:
+                log(f"Error when cleaning up sound: {err}")
 
         # Check duration
         duration = end_time - start_time
