@@ -185,8 +185,7 @@ class QuickWhisper:
                 chatgpt_instruction = ""
         elif gui is True:
             # Show recording form
-            whisper_prompt, chatgpt_instruction = popup(
-                whisper_prompt, task, lang)
+            whisper_prompt, chatgpt_instruction = popup(whisper_prompt, task, lang)
         else:
 
             def released_shift(key):
@@ -208,8 +207,7 @@ class QuickWhisper:
             listener.join()  # blocking
 
         if chatgpt_instruction:
-            raise NotImplementedError(
-                "Chatgpt_instruction is not yet implemented")
+            raise NotImplementedError("Chatgpt_instruction is not yet implemented")
 
         # Kill the recording
         subprocess.run(
@@ -335,8 +333,7 @@ class QuickWhisper:
                     for f in Path("/tmp").iterdir()
                     if f.name.startswith("quick_whisper_chat_")
                 ]
-                voice_files = sorted(
-                    voice_files, key=lambda x: x.stat().st_ctime)
+                voice_files = sorted(voice_files, key=lambda x: x.stat().st_ctime)
                 voice_file = voice_files[-1]
 
                 log(f"Reusing previous voice chat file: {voice_file}")
@@ -344,8 +341,7 @@ class QuickWhisper:
                 with open(voice_file, "r") as f:
                     lines = [line.strip() for line in f.readlines()]
 
-                messages = [
-                    {"role": "system", "content": system_prompts["voice"]}]
+                messages = [{"role": "system", "content": system_prompts["voice"]}]
                 role = "assistant"
                 for line in lines:
                     if not line:
@@ -393,8 +389,7 @@ class QuickWhisper:
                     log(f"Playing voice file: {vocal_file_mp3}")
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(
-                        log(f"Error when using piper so will use espeak: '{err}'"))
+                    notif(log(f"Error when using piper so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
@@ -409,8 +404,7 @@ class QuickWhisper:
                     response.stream_to_file(vocal_file_mp3)
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(
-                        log(f"Error when using openai so will use espeak: '{err}'"))
+                    notif(log(f"Error when using openai so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
