@@ -12,7 +12,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 
 ## Features
 * Choose the language via `--language`
-* Specify a whisper prompt in advance via `--prompt`
+* Specify a whisper prompt in advance via `--whisper_prompt`
 * If you use `--task=transform_clipboard`, then ChatGPT will be tasked to transform the content of your clipboard according to the instruction you told to whisper.
 * If you use `--task=new_voice_chat` you will start a voice chat with the specified `voice_engine` used to give you back the answers. Implemented voice engines are `espeak`, `piper` and `openai`. You can continue the vocal chat indefinitely by using `task=continue_voice_chat`.
 * Audio cleanup and removes long silences via sox
