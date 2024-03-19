@@ -1,28 +1,10 @@
 from pathlib import Path
-import json
 import tempfile
-import os
 import subprocess
 import time
 
-import fire
-from openai import OpenAI
-
-from pathlib import Path
 
 # import pyautogui
-from pynput import keyboard
-
-from litellm import completion
-
-# Load OpenAI api key from file
-with open("OPENAI_API_KEY.txt", "r") as f:
-    api_key = f.read().strip()
-    client = OpenAI(api_key=api_key)
-for path in list(Path(".").rglob("./*API_KEY.txt")):
-    backend = path.name.split("_API_KEY.txt")[0]
-    content = path.read_text().strip()
-    os.environ[f"{backend.upper()}_API_KEY"] = content
 
 # Set up variables and prompts
 prompts = {
@@ -216,6 +198,7 @@ class QuickWhisper:
             # Show recording form
             whisper_prompt, LLM_instruction = popup(whisper_prompt, task, lang)
         else:
+            from pynput import keyboard
 
             def released_shift(key):
                 if key == keyboard.Key.shift:
@@ -276,6 +259,13 @@ class QuickWhisper:
             )
             raise SystemExit()
 
+        from openai import OpenAI
+
+        # Load OpenAI api key from file
+        with open("OPENAI_API_KEY.txt", "r") as f:
+            api_key = f.read().strip()
+            client = OpenAI(api_key=api_key)
+
         # Call whisper
         log("Calling whisper")
         with open(file, "rb") as f:
@@ -290,6 +280,14 @@ class QuickWhisper:
         notif(log(f"Transcript: {text}"))
 
         import pyclip
+
+        from litellm import completion
+        import os
+
+        for path in list(Path(".").rglob("./*API_KEY.txt")):
+            backend = path.name.split("_API_KEY.txt")[0]
+            content = path.read_text().strip()
+            os.environ[f"{backend.upper()}_API_KEY"] = content
 
         if task == "write":
             clipboard = pyclip.paste()
@@ -475,6 +473,8 @@ class QuickWhisper:
 
 
 if __name__ == "__main__":
+    import fire
+
     try:
         fire.Fire(QuickWhisper)
     except Exception as err:
