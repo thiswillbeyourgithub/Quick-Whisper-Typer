@@ -101,7 +101,7 @@ class QuickWhisper:
         self,
         lang,
         task,
-        model="gpt-3.5-turbo-1106",
+        model="gpt-3.5-turbo-0125",
         auto_paste=False,
         gui=False,
         voice_engine=None,
@@ -115,6 +115,7 @@ class QuickWhisper:
             fr, en
         task
             transform_clipboard, write, voice_chat
+        model: str, default "gpt-3.5-turbo-0125"
         auto_paste, default False
             if True, will use xdotool to paste directly. Otherwise just plays
             a sound to tell you that the clipboard was filled.
