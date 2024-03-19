@@ -105,7 +105,7 @@ class QuickWhisper:
         auto_paste=False,
         gui=False,
         voice_engine=None,
-        prompt=None,
+        whisper_prompt=None,
         daemon_mode=False,
     ):
         """
@@ -123,7 +123,7 @@ class QuickWhisper:
             if False, no window is used and you have to press shift to stop the recording.
         voice_engine, default None
             piper, openai, espeak, None
-        prompt
+        whisper_prompt
             default to None
         daemon_mode
             default to False. Designed for loop.py Is either False or a queue
@@ -145,8 +145,8 @@ class QuickWhisper:
         ), f"Invalid voice engine {voice_engine} not part of {allowed_voice_engine}"
 
         # Selecting prompt based on language
-        if not prompt:
-            prompt = prompts[lang]
+        if not whisper_prompt:
+            whisper_prompt = prompts[lang]
 
         # Checking that the task is allowed
         task = task.replace("-", "_").lower()
@@ -160,7 +160,7 @@ class QuickWhisper:
             task != "" and task in allowed_tasks
         ), f"Invalid task {task} not part of {allowed_tasks}"
 
-        log(f"Will use language {lang} and prompt {prompt} and task {task}")
+        log(f"Will use language {lang} and prompt {whisper_prompt} and task {task}")
 
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
@@ -181,11 +181,11 @@ class QuickWhisper:
 
         if daemon_mode is not False:
             if daemon_mode.get() == "STOP":
-                whisper_prompt = prompt
                 chatgpt_instruction = ""
         elif gui is True:
             # Show recording form
-            whisper_prompt, chatgpt_instruction = popup(prompt, task, lang)
+            whisper_prompt, chatgpt_instruction = popup(
+                whisper_prompt, task, lang)
         else:
 
             def released_shift(key):
@@ -195,7 +195,6 @@ class QuickWhisper:
                     return False
 
             listener = keyboard.Listener(on_release=released_shift)
-            whisper_prompt = prompt
             chatgpt_instruction = ""
 
             listener.start()  # non blocking
