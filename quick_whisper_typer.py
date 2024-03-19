@@ -1,3 +1,4 @@
+from pathlib import Path
 import json
 import tempfile
 import os
@@ -12,8 +13,16 @@ from pathlib import Path
 # import pyautogui
 from pynput import keyboard
 
+from litellm import completion
+
 # Load OpenAI api key from file
-client = OpenAI(api_key=open("API_KEY.txt", "r").read().strip())
+with open("OPENAI_API_KEY.txt", "r") as f:
+    api_key = f.read().strip()
+    client = OpenAI(api_key=api_key)
+for path in list(Path(".").rglob("./*API_KEY.txt")):
+    backend = path.name.split("API_KEY.txt")[0]
+    content = path.read_text().strip()
+    os.environ[f"{backend.upper()}_API_KEY"] = content
 
 # Set up variables and prompts
 prompts = {
@@ -27,6 +36,13 @@ system_prompts = {
     "transform_clipboard": "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else.",
 }
 speaker_models = {"fr": "fr_FR-gilles-low", "en": "en_US-lessac-medium"}
+allowed_tasks = (
+    "transform_clipboard",
+    "new_voice_chat",
+    "continue_voice_chat",
+    "write",
+    "custom",
+)
 
 sox_cleanup = [
     # isolate voice frequency
@@ -72,7 +88,7 @@ def popup(prompt, task, lang):
     layout = [
         [sg.Text(f"TASK: {task}\nLANG: {lang}")],
         [sg.Text("Whisper prompt"), sg.Input(prompt)],
-        [sg.Text("ChatGPT instruction"), sg.Input()],
+        [sg.Text("LLM instruction"), sg.Input()],
         [
             sg.Button("Cancel", key="-CANCEL-", button_color="blue"),
             sg.Button("Go!", key="-GO-", button_color="red"),
@@ -85,9 +101,9 @@ def popup(prompt, task, lang):
 
     if event == "-GO-":
         whisper_prompt = values[0]
-        chatgpt_instruction = values[1]
+        LLM_instruction = values[1]
         log(f"Whisper prompt: {whisper_prompt} for task {task}")
-        return whisper_prompt, chatgpt_instruction
+        return whisper_prompt, LLM_instruction
     else:
         log("Pressed cancel or escape. Exiting.")
         subprocess.run(
@@ -101,11 +117,12 @@ class QuickWhisper:
         self,
         lang,
         task,
-        model="gpt-3.5-turbo-0125",
+        model="openai/gpt-3.5-turbo-0125",
         auto_paste=False,
         gui=False,
         voice_engine=None,
         whisper_prompt=None,
+        LLM_instruction=None,
         daemon_mode=False,
     ):
         """
@@ -115,7 +132,7 @@ class QuickWhisper:
             fr, en
         task
             transform_clipboard, write, voice_chat
-        model: str, default "gpt-3.5-turbo-0125"
+        model: str, default "openai/gpt-3.5-turbo-0125"
         auto_paste, default False
             if True, will use xdotool to paste directly. Otherwise just plays
             a sound to tell you that the clipboard was filled.
@@ -124,8 +141,12 @@ class QuickWhisper:
             if False, no window is used and you have to press shift to stop the recording.
         voice_engine, default None
             piper, openai, espeak, None
-        whisper_prompt
+        whisper_prompt: str
             default to None
+        LLM_instruction: str
+            if given, then the transcript will be given to an LLM and tasked
+            to modify it according to those instructions. Meaning this is
+            the system prompt.
         daemon_mode
             default to False. Designed for loop.py Is either False or a queue
             that stops listening when an item is received.
@@ -136,6 +157,17 @@ class QuickWhisper:
         assert (
             lang != "" and lang in allowed_langs
         ), f"Invalid lang {lang} not part of {allowed_langs}"
+
+        if gui is True:
+            assert (
+                not whisper_prompt
+            ), "whisper_prompt already given, shouldn't launch gui"
+            assert (
+                not LLM_instruction
+            ), "whisper_prompt already given, shouldn't launch gui"
+
+        if gui or LLM_instruction:
+            assert "/" in model, f"LLM model name must be given in litellm format"
 
         # Checking voice engine
         if voice_engine == "None":
@@ -151,12 +183,6 @@ class QuickWhisper:
 
         # Checking that the task is allowed
         task = task.replace("-", "_").lower()
-        allowed_tasks = (
-            "transform_clipboard",
-            "new_voice_chat",
-            "continue_voice_chat",
-            "write",
-        )
         assert (
             task != "" and task in allowed_tasks
         ), f"Invalid task {task} not part of {allowed_tasks}"
@@ -182,10 +208,10 @@ class QuickWhisper:
 
         if daemon_mode is not False:
             if daemon_mode.get() == "STOP":
-                chatgpt_instruction = ""
+                raise NotImplementedError()
         elif gui is True:
             # Show recording form
-            whisper_prompt, chatgpt_instruction = popup(whisper_prompt, task, lang)
+            whisper_prompt, LLM_instruction = popup(whisper_prompt, task, lang)
         else:
 
             def released_shift(key):
@@ -195,7 +221,6 @@ class QuickWhisper:
                     return False
 
             listener = keyboard.Listener(on_release=released_shift)
-            chatgpt_instruction = ""
 
             listener.start()  # non blocking
             log("Shortcut listener started, press shift to exit")
@@ -205,9 +230,6 @@ class QuickWhisper:
             import torchaudio
 
             listener.join()  # blocking
-
-        if chatgpt_instruction:
-            raise NotImplementedError("Chatgpt_instruction is not yet implemented")
 
         # Kill the recording
         subprocess.run(
@@ -270,6 +292,29 @@ class QuickWhisper:
                 raise SystemExit()
             log(f"Clipboard previous content: '{clipboard}'")
 
+            if LLM_instruction:
+                log(
+                    f"Calling {model} to transfrom the transcript to follow "
+                    f"those instructions: {LLM_instruction}"
+                )
+                LLM_response = completion(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": LLM_instruction,
+                        },
+                        {
+                            "role": "user",
+                            "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'",
+                        },
+                    ],
+                )
+                answer = LLM_response.json(
+                )["choices"][0]["message"]["content"]
+                log(f'LLM output: "{answer}"')
+                txt = answer
+
             log("Pasting clipboard")
             # pyautogui.click()
             pyclip.copy(text)
@@ -281,7 +326,7 @@ class QuickWhisper:
 
         elif task == "transform_clipboard":
             log(
-                f'Calling ChatGPT with instruction "{text}" and tasked to transform the clipboard'
+                f'Calling LLM with instruction "{text}" and tasked to transform the clipboard'
             )
 
             clipboard = str(pyclip.paste())
@@ -290,7 +335,7 @@ class QuickWhisper:
                 raise SystemExit()
             log(f"Clipboard content: '{clipboard}'")
 
-            chatgpt_response = client.chat.completions.create(
+            LLM_response = completion(
                 model=model,
                 messages=[
                     {
@@ -303,10 +348,8 @@ class QuickWhisper:
                     },
                 ],
             )
-            answer = json.loads(chatgpt_response.json())["choices"][0]["message"][
-                "content"
-            ]
-            log(f'ChatGPT clipboard transformation: "{answer}"')
+            answer = LLM_response.json()["choices"][0]["message"]["content"]
+            log(f'LLM clipboard transformation: "{answer}"')
 
             log("Pasting clipboard")
             # pyautogui.click()
@@ -333,7 +376,8 @@ class QuickWhisper:
                     for f in Path("/tmp").iterdir()
                     if f.name.startswith("quick_whisper_chat_")
                 ]
-                voice_files = sorted(voice_files, key=lambda x: x.stat().st_ctime)
+                voice_files = sorted(
+                    voice_files, key=lambda x: x.stat().st_ctime)
                 voice_file = voice_files[-1]
 
                 log(f"Reusing previous voice chat file: {voice_file}")
@@ -341,7 +385,8 @@ class QuickWhisper:
                 with open(voice_file, "r") as f:
                     lines = [line.strip() for line in f.readlines()]
 
-                messages = [{"role": "system", "content": system_prompts["voice"]}]
+                messages = [
+                    {"role": "system", "content": system_prompts["voice"]}]
                 role = "assistant"
                 for line in lines:
                     if not line:
@@ -358,14 +403,10 @@ class QuickWhisper:
 
             messages.append({"role": "user", "content": text})
 
-            log(f"Calling ChatGPT with messages: '{messages}'")
-            chatgpt_response = client.chat.completions.create(
-                model=model, messages=messages
-            )
-            answer = json.loads(chatgpt_response.json())["choices"][0]["message"][
-                "content"
-            ]
-            log(f'ChatGPT answer to the chat: "{answer}"')
+            log(f"Calling LLM with messages: '{messages}'")
+            LLM_response = completion(model=model, messages=messages)
+            answer = LLM_response.json()["choices"][0]["message"]["content"]
+            log(f'LLM answer to the chat: "{answer}"')
             notif(answer)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
@@ -389,7 +430,8 @@ class QuickWhisper:
                     log(f"Playing voice file: {vocal_file_mp3}")
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(log(f"Error when using piper so will use espeak: '{err}'"))
+                    notif(
+                        log(f"Error when using piper so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
@@ -404,7 +446,8 @@ class QuickWhisper:
                     response.stream_to_file(vocal_file_mp3)
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(log(f"Error when using openai so will use espeak: '{err}'"))
+                    notif(
+                        log(f"Error when using openai so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
