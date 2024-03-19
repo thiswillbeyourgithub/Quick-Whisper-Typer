@@ -478,6 +478,8 @@ if __name__ == "__main__":
     try:
         fire.Fire(QuickWhisper)
     except Exception as err:
+        import os
+
         os.system("killall rec")
         notif(f"Error: {err}")
         raise
