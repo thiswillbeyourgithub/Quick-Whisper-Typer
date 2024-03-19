@@ -226,10 +226,10 @@ class QuickWhisper:
         if gui is False:
             playsound("sounds/Rhodes.ogg")
 
-        # clean up the sound
-        log("Cleaning up sound")
-
         if sound_cleanup:
+            # clean up the sound
+            log("Cleaning up sound")
+
             # fast if already imported
             import soundfile as sf
             import torchaudio
