@@ -20,7 +20,7 @@ with open("OPENAI_API_KEY.txt", "r") as f:
     api_key = f.read().strip()
     client = OpenAI(api_key=api_key)
 for path in list(Path(".").rglob("./*API_KEY.txt")):
-    backend = path.name.split("API_KEY.txt")[0]
+    backend = path.name.split("_API_KEY.txt")[0]
     content = path.read_text().strip()
     os.environ[f"{backend.upper()}_API_KEY"] = content
 
@@ -313,7 +313,7 @@ class QuickWhisper:
                 answer = LLM_response.json(
                 )["choices"][0]["message"]["content"]
                 log(f'LLM output: "{answer}"')
-                txt = answer
+                text = answer
 
             log("Pasting clipboard")
             # pyautogui.click()
