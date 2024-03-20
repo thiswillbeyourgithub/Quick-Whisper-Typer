@@ -206,7 +206,7 @@ class QuickWhisper:
                     time.sleep(1)
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
-                    log("Pressed escape or spacebar to exit.")
+                    notif(log("Pressed escape or spacebar to exit."))
                     os.system("killall rec")
                     return False
 
