@@ -205,11 +205,15 @@ class QuickWhisper:
                     log("Pressed shift.")
                     time.sleep(1)
                     return False
+                elif key in [keyboard.Key.esc, keyboard.Key.space]:
+                    log("Pressed escape or spacebar to exit.")
+                    os.system("killall rec")
+                    return False
 
             listener = keyboard.Listener(on_release=released_shift)
 
             listener.start()  # non blocking
-            log("Shortcut listener started, press shift to exit")
+            log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
 
             # import last minute to be quicker to launch
             import soundfile as sf
