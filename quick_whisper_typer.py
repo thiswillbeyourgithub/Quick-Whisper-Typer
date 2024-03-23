@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import tempfile
 import subprocess
@@ -286,7 +287,6 @@ class QuickWhisper:
         import pyclip
 
         from litellm import completion
-        import os
 
         for path in list(Path(".").rglob("./*API_KEY.txt")):
             backend = path.name.split("_API_KEY.txt")[0]
@@ -482,8 +482,6 @@ if __name__ == "__main__":
     try:
         fire.Fire(QuickWhisper)
     except Exception as err:
-        import os
-
         os.system("killall rec")
         notif(f"Error: {err}")
         raise
