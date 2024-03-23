@@ -207,20 +207,18 @@ class QuickWhisper:
                     time.sleep(1)
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
-                    notif(log("Pressed escape or spacebar to exit."))
+                    notif(log("Pressed escape or spacebar: quitting."))
                     os.system("killall rec")
-                    return False
+                    raise SystemExit("Quitting.")
 
-            listener = keyboard.Listener(on_release=released_shift)
+            with keyboard.Listener(on_release=released_shift) as listener:
+                log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
 
-            listener.start()  # non blocking
-            log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
+                # import last minute to be quicker to launch
+                import soundfile as sf
+                import torchaudio
 
-            # import last minute to be quicker to launch
-            import soundfile as sf
-            import torchaudio
-
-            listener.join()  # blocking
+                listener.join()  # blocking
 
         # Kill the recording
         subprocess.run(
