@@ -293,33 +293,28 @@ class QuickWhisper:
 
         if task == "write":
             clipboard = pyclip.paste()
-            if not clipboard:
-                log("Clipboard is empty, this is not compatible with the task")
-                raise SystemExit()
-            if isinstance(clipboard, str):
-                log(f"Clipboard previous content: '{clipboard}'")
-            elif isinstance(clipboard, bytes):
-                log(f"Clipboard previous content is binary")
 
             if LLM_instruction:
                 log(
                     f"Calling {model} to transfrom the transcript to follow "
                     f"those instructions: {LLM_instruction}"
                 )
-                assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
+                messages=[
+                    {
+                        "role": "system",
+                        "content": LLM_instruction,
+                    },
+                    {
+                        "role": "user",
+                        "content": text,
+                    },
+                ]
+                import json
+                log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4)}")
 
                 LLM_response = completion(
                     model=model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": LLM_instruction,
-                        },
-                        {
-                            "role": "user",
-                            "content": f"INPUT_TEXT: '{clipboard}'\n\nINSTRUCTION: '{text}'",
-                        },
-                    ],
+                    messages=messages,
                 )
                 answer = LLM_response.json(
                 )["choices"][0]["message"]["content"]
