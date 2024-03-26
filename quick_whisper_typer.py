@@ -306,6 +306,8 @@ class QuickWhisper:
                     f"Calling {model} to transfrom the transcript to follow "
                     f"those instructions: {LLM_instruction}"
                 )
+                assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
+
                 LLM_response = completion(
                     model=model,
                     messages=[
@@ -347,6 +349,8 @@ class QuickWhisper:
             elif isinstance(clipboard, bytes):
                 log(f"Clipboard previous content is binary")
 
+            assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
+            assert len(text) < 10000, f"Suspiciously large text content: {len(text)}"
             LLM_response = completion(
                 model=model,
                 messages=[
