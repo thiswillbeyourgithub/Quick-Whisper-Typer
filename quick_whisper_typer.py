@@ -296,7 +296,10 @@ class QuickWhisper:
             if not clipboard:
                 log("Clipboard is empty, this is not compatible with the task")
                 raise SystemExit()
-            log(f"Clipboard previous content: '{clipboard}'")
+            if isinstance(clipboard, str):
+                log(f"Clipboard previous content: '{clipboard}'")
+            elif isinstance(clipboard, bytes):
+                log(f"Clipboard previous content is binary")
 
             if LLM_instruction:
                 log(
@@ -339,7 +342,10 @@ class QuickWhisper:
             if not clipboard:
                 notif(log("Clipboard is empty, this is not compatible with the task"))
                 raise SystemExit()
-            log(f"Clipboard content: '{clipboard}'")
+            if isinstance(clipboard, str):
+                log(f"Clipboard previous content: '{clipboard}'")
+            elif isinstance(clipboard, bytes):
+                log(f"Clipboard previous content is binary")
 
             LLM_response = completion(
                 model=model,
