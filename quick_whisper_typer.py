@@ -292,7 +292,11 @@ class QuickWhisper:
             os.environ[f"{backend.upper()}_API_KEY"] = content
 
         if task == "write":
-            clipboard = pyclip.paste()
+            try:
+                clipboard = pyclip.paste()
+            except Exception as err:
+                log(f"Erasing the previous clipboard because error when loding it: {err}")
+                clipboard = ""
 
             if LLM_instruction:
                 log(
@@ -328,6 +332,7 @@ class QuickWhisper:
                 os.system("xdotool key ctrl+v")
                 pyclip.copy(clipboard)
                 log("Clipboard reset")
+
             playsound("sounds/Positive.ogg")
 
         elif task == "transform_clipboard":
@@ -335,7 +340,12 @@ class QuickWhisper:
                 f'Calling LLM with instruction "{text}" and tasked to transform the clipboard'
             )
 
-            clipboard = str(pyclip.paste())
+            try:
+                clipboard = str(pyclip.paste())
+            except Exception as err:
+                raise Exception(
+                        f"Error when loading content of clipboard: {err}")
+
             if not clipboard:
                 notif(log("Clipboard is empty, this is not compatible with the task"))
                 raise SystemExit()
@@ -370,6 +380,7 @@ class QuickWhisper:
                 os.system("xdotool key ctrl+v")
                 pyclip.copy(clipboard)
                 log("Clipboard reset")
+
             playsound("sounds/Positive.ogg")
 
         elif "voice_chat" in task:
