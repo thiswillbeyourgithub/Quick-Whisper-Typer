@@ -310,7 +310,7 @@ class QuickWhisper:
                     },
                 ]
                 import json
-                log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4)}")
+                log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4, ensure_ascii=False)}")
 
                 LLM_response = completion(
                     model=model,
