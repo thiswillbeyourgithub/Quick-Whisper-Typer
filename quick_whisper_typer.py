@@ -215,8 +215,10 @@ class QuickWhisper:
                 log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
 
                 # import last minute to be quicker to launch
-                import soundfile as sf
-                import torchaudio
+                if sound_cleanup:
+                    import soundfile as sf
+                    import torchaudio
+
 
                 listener.join()  # blocking
 
@@ -232,10 +234,6 @@ class QuickWhisper:
         if sound_cleanup:
             # clean up the sound
             log("Cleaning up sound")
-
-            # fast if already imported
-            import soundfile as sf
-            import torchaudio
 
             try:
                 waveform, sample_rate = torchaudio.load(file)
