@@ -219,6 +219,12 @@ class QuickWhisper:
                     import soundfile as sf
                     import torchaudio
 
+                from litellm import completion, transcription
+
+                for path in list(Path(".").rglob("./*API_KEY.txt")):
+                    backend = path.name.split("_API_KEY.txt")[0]
+                    content = path.read_text().strip()
+                    os.environ[f"{backend.upper()}_API_KEY"] = content
 
                 listener.join()  # blocking
 
@@ -260,17 +266,10 @@ class QuickWhisper:
             )
             raise SystemExit()
 
-        from openai import OpenAI
-
-        # Load OpenAI api key from file
-        with open("OPENAI_API_KEY.txt", "r") as f:
-            api_key = f.read().strip()
-            client = OpenAI(api_key=api_key)
-
         # Call whisper
         log("Calling whisper")
         with open(file, "rb") as f:
-            transcript_response = client.audio.transcriptions.create(
+            transcript_response = transcription(
                 model="whisper-1",
                 file=f,
                 language=lang,
@@ -281,13 +280,6 @@ class QuickWhisper:
         notif(log(f"Transcript: {text}"))
 
         import pyclip
-
-        from litellm import completion
-
-        for path in list(Path(".").rglob("./*API_KEY.txt")):
-            backend = path.name.split("_API_KEY.txt")[0]
-            content = path.read_text().strip()
-            os.environ[f"{backend.upper()}_API_KEY"] = content
 
         if task == "write":
             try:
@@ -456,6 +448,8 @@ class QuickWhisper:
 
             if voice_engine == "openai":
                 try:
+                    from openai import OpenAI
+                    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
                     response = client.audio.speech.create(
                         model="tts-1",
                         voice="echo",
