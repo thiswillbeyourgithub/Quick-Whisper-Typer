@@ -44,8 +44,8 @@ record() {
 
 
 # gather user arguments
-for arg in "$@"; do
-    case "$arg" in
+while (( $# > 0 )); do
+    case "$1" in
         -l | --language)
             LANG="$2"
             shift 2
@@ -62,10 +62,10 @@ for arg in "$@"; do
             VOICE_ENGINE="$2"
             shift 2
             ;;
-        #*)
-        #    echo "Invalid option: $arg"
-        #    exit 1
-        #    ;;
+        *)
+            echo "Invalid option: $1"
+            exit 1
+            ;;
     esac
 done
 
