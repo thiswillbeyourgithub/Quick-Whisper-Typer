@@ -63,7 +63,7 @@ while (( $# > 0 )); do
             shift 2
             ;;
         *)
-            echo "Invalid option: $1"
+            echo "Invalid option(s): $@"
             exit 1
             ;;
     esac
