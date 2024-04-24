@@ -190,6 +190,7 @@ class QuickWhisper:
         time.sleep(0.2)  # delay to properly recod
         from playsound import playsound
 
+        notif("Listening")
         playsound("sounds/Slick.ogg")
 
         if daemon_mode is not False:
@@ -235,6 +236,7 @@ class QuickWhisper:
         end_time = time.time()
         log(f"Done recording {file}")
         if gui is False:
+            notif("Analysing")
             playsound("sounds/Rhodes.ogg")
 
         if sound_cleanup:
@@ -323,6 +325,7 @@ class QuickWhisper:
                 pyclip.copy(clipboard)
                 log("Clipboard reset")
 
+            notif("Done")
             playsound("sounds/Positive.ogg")
 
         elif task == "transform_clipboard":
