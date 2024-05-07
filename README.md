@@ -1,30 +1,51 @@
 # Quick Whisper Typer
-Super simple python script to start recording sound, send it to whisper then have it type for you in a field. Can be used to transform the clipboard too. Latency is <2s and sometimes <1s.
+Super simple python script to start recording sound, send it to whisper then have it type for you anywhere.
+* Can also modify text according to voice commands.
+* Latency is as low as I could (<1s before starting to speak).
+* It can be seen as a minimalist alternative to [AquaVoice](https://withaqua.com/)
 
-## The way this works
-1. Move your cursor to where you want the output to be.
-2. Launch the script (preferably using a keyboard shortcut).
-3. A small window pops up. If you enter text inside it will be given as instruction to an LLM to alter your whisper transcript. Leave empty otherwise. Press enter to close the window without moving your cursor.
-4. Whisper is called on the audio.
-5. If you used `--task=transform_clipboard` the output will be: LLM transformation of the current clipboard according to the whisper transcript. If you didn't the output will be the whisper transcript.
-6. If you entered text in the small window, it will be given as instruction to an LLM to further transform the output (e.g. "Translate to English")
-7. The current clipboard is stored. The output text is copied. `xdotool` sends `ctrl+v` (press shift if in a console!) to add the output to where your cursor is. The clipboard is then refilled with what was previously there.
+## The way each task works
+### write
+1. starts recording
+2. when you're done press shift (escape or spacebar to cancel)
+3. whisper will transcribe your speech
+4.a if `--auto_paste` is True: your current clipboard will be saved, replaced by the transcription, "ctrl+v" will automatically be pressed, then your old clipboard will replace again like nothing happened.
+4.b if `--auto_paste` is False: your clipboard will be replaced by the transcription
+### transform_clipboard
+1. starts recording
+2. when you're done press shift (escape or spacebar to cancel)
+3. whisper will transcribe your speech
+4. the transcription will be interpreted as an instruction for `--llm_model` on how to transform the text found in your clipboard
+5. the result will either be pasted or stored in the clipboard like for `--task=write`
+### new_voice_chat
+1. starts recording
+2. when you're done press shift (escape or spacebar to cancel)
+3. whisper will transcribe your speech
+4. the transcription will be interpreted as the first user message in a conversation with `--llm_model`
+5. the result will either be pasted or stored in the clipboard like for `--task=write`, and optionaly read aloud if `--voice_engine` is set
+6. To continue the conversation, use the task `--task=continue_voice_chat`
+
+# Examples
+* I want to write text: `python quick_whisper_typer.py --task=write --auto_paste`
+* I want to translate text: copy the text in to the clipboard then `python quick_whisper_typer.py --task=transform_clipboard --auto_paste`
+* I want to start a vocal conversation: `python quick_whisper_typer.py --task="new_voice_chat" --voice_engine='openai'`
+* I want to continue the conversation: `python quick_whisper_typer.py --task="continue_voice_chat" --voice_engine='openai'`
+* I want to be able to call it without setting up keybindings: `python loop.py` then press shift 5 times in any screen to call quick_whisper_typer.
+
 
 ## Features
-* Choose the language via `--language`
-* Specify a whisper prompt in advance via `--whisper_prompt`
-* If you use `--task=transform_clipboard`, then the LLM will be tasked to transform the content of your clipboard according to the instruction you told to whisper.
-* If you use `--task=new_voice_chat` you will start a voice chat with the specified `voice_engine` used to give you back the answers. Implemented voice engines are `espeak`, `piper` and `openai`. You can continue the vocal chat indefinitely by using `task=continue_voice_chat`.
-* Audio cleanup and removes long silences via sox
-* `loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
-* argument `auto_paste` can be set to False to make a bell sound to tell you that the answer was sent to the clipboard instead of pasting it directly.
+* Supports any spoken languages supported by whisper
+* Minimalist code
+* Low latency: it starts as fast as possible to be ready to listen to you
+* Multiple voice_engine: openai, [piper](https://github.com/rhasspy/piper), espeak (fallback if any of the other two fails)
+* Optional audio cleanup and long silence removal via sox
+* `quick_whisper_loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
 * Support virtually any type of LLM (ChatGPT, Claude, Huggingface, Llama, etc) thanks to [litellm](https://docs.litellm.ai/).
 
 ## How to
 * Put your OpenAI api key in a file called OPENAI_API_KEY.txt.
 * *optional: add a keyboard shortcut to call this script. See my i3 bindings below.*
 * `chmod +x ./quick_whisper_typer.py`
-* `./quick_whisper_typer.py --language en`
 
 ### i3 bindings
 ```

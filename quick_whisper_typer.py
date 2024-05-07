@@ -3,6 +3,8 @@ import threading
 from pathlib import Path
 import time
 
+DEBUG_IMPORT = False
+
 
 class QuickWhisper:
     system_prompts = {
@@ -47,7 +49,7 @@ class QuickWhisper:
     def __init__(
         self,
         task: str = None,
-        model: str = "openai/gpt-3.5-turbo-0125",
+        llm_model: str = "openai/gpt-3.5-turbo-0125",
         auto_paste: bool = False,
         sound_cleanup: bool = False,
         whisper_prompt: str = None,
@@ -56,7 +58,7 @@ class QuickWhisper:
         piper_model_path: str = None,
         LLM_instruction: str = None,
         gui: bool = False,
-        daemon_mode: bool = False,
+        verbose: bool = True,
     ):
         """
         Parameters
@@ -64,7 +66,8 @@ class QuickWhisper:
         task
             transform_clipboard, write, voice_chat
 
-        model: str, default "openai/gpt-3.5-turbo-0125"
+        llm_model: str, default "openai/gpt-3.5-turbo-0125"
+            language model to use for the task except if task==write
 
         auto_paste, default False
             if True, will use xdotool to paste directly. Otherwise just plays
@@ -99,11 +102,12 @@ class QuickWhisper:
             if True, a window will open to allow to enter specific prompts etc
             if False, no window is used and you have to press shift to stop the recording.
 
-        daemon_mode
-            default to False. Designed for loop.py Is either False or a queue
-            that stops listening when an item is received.
-            if True, gui argument is ignored
+        verbose: bool, default True
         """
+        self.verbose = verbose
+        if verbose:
+            global DEBUG_IMPORT
+            DEBUG_IMPORT = True
         if not task:
             raise Exception(f"You must specify a task from {self.allowed_tasks}")
         if gui is True:
@@ -115,7 +119,7 @@ class QuickWhisper:
             ), "LLM_instruction already given, shouldn't launch gui"
 
         if gui or LLM_instruction:
-            assert "/" in model, f"LLM model name must be given in litellm format"
+            assert "/" in llm_model, f"LLM model name must be given in litellm format"
 
         # Checking voice engine
         if voice_engine == "None":
@@ -134,16 +138,49 @@ class QuickWhisper:
             task != "" and task in self.allowed_tasks
         ), f"Invalid task {task} not part of {self.allowed_tasks}"
 
+        # to reduce startup time, modules are imported in a thread
+        to_import = [
+            "from playsound import playsound as playsound",
+            "from plyer import notification as notification",
+            "import tempfile",
+            "import subprocess"
+        ]
+        if gui:
+            to_import.append("import PySimpleGUI as sg")
+        else:
+            to_import.append("from pynput import keyboard")
+        to_import.append("import os")
+        if sound_cleanup:
+            to_import.append("import torchaudio")
+            to_import.append("import soundfile as sf")
+        to_import.append("from litellm import completion, transcription")
+        if task == "write":
+            to_import.append("import json")
+        if task == "write" or task == "transform_clipboard":
+            to_import.append("import pyclip")
+        if "voice" in task:
+            if voice_engine:
+                if voice_engine == "piper":
+                    to_import.append("from piper.voice import PiperVoice as piper")
+                    to_import.append("import wave")
+                    if piper_model_path:
+                        to_import.append(f"voice = piper.load('{piper_model_path}')")
+                elif voice_engine == "openai":
+                    to_import.append("from openai import OpenAI")
+
+        self.import_thread = threading.Thread(target=importer, args=(to_import,))
+        self.import_thread.start()
+
         self.log(f"Will use prompt {whisper_prompt} and task {task}")
 
         print("tempfile" in globals())
-        wait_for_module("tempfile")
+        self.wait_for_module("tempfile")
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
 
         # Kill any previously running recordings
         start_time = time.time()
-        wait_for_module("subprocess")
+        self.wait_for_module("subprocess")
         subprocess.run(
             ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
@@ -152,22 +189,19 @@ class QuickWhisper:
         self.log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
 
-        wait_for_module("playsound")
+        self.wait_for_module("playsound")
         self.notif("Listening")
-        wait_for_module("playsound")
+        self.wait_for_module("playsound")
         playsound("sounds/Slick.ogg")
 
-        if daemon_mode is not False:
-            if daemon_mode.get() == "STOP":
-                raise NotImplementedError()
-        elif gui is True:
+        if gui is True:
             # Show recording form
             whisper_prompt, LLM_instruction = self.gui(
                 whisper_prompt,
                 task,
                 )
         else:
-            wait_for_module("keyboard")
+            self.wait_for_module("keyboard")
             def released_shift(key):
                 if key == keyboard.Key.shift:
                     self.log("Pressed shift.")
@@ -213,8 +247,8 @@ class QuickWhisper:
             # clean up the sound
             self.log("Cleaning up sound")
 
-            wait_for_module("torchaudio")
-            wait_for_module("sf")
+            self.wait_for_module("torchaudio")
+            self.wait_for_module("sf")
             try:
                 waveform, sample_rate = torchaudio.load(file)
                 waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
@@ -232,20 +266,21 @@ class QuickWhisper:
 
         # Call whisper
         self.log("Calling whisper")
+        self.wait_for_module("transcription")
         with open(file, "rb") as f:
-            wait_for_module("transcription")
             transcript_response = transcription(
                 model="whisper-1",
                 file=f,
                 language=whisper_lang,
                 prompt=whisper_prompt,
                 temperature=0,
+                max_retries=0,
             )
         text = transcript_response.text
         self.notif(self.log(f"Transcript: {text}"))
 
         if task == "write":
-            wait_for_module("pyclip")
+            self.wait_for_module("pyclip")
             try:
                 clipboard = pyclip.paste()
             except Exception as err:
@@ -254,7 +289,7 @@ class QuickWhisper:
 
             if LLM_instruction:
                 self.log(
-                    f"Calling {model} to transfrom the transcript to follow "
+                    f"Calling {llm_model} to transfrom the transcript to follow "
                     f"those instructions: {LLM_instruction}"
                 )
                 messages=[
@@ -267,12 +302,12 @@ class QuickWhisper:
                         "content": text,
                     },
                 ]
-                wait_for_module("json")
+                self.wait_for_module("json")
                 self.log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4, ensure_ascii=False)}")
 
-                wait_for_module("completion")
+                self.wait_for_module("completion")
                 LLM_response = completion(
-                    model=model,
+                    model=llm_model,
                     messages=messages,
                 )
                 answer = LLM_response.json(
@@ -296,7 +331,7 @@ class QuickWhisper:
                 f'Calling LLM with instruction "{text}" and tasked to transform the clipboard'
             )
 
-            wait_for_module("pyclip")
+            self.wait_for_module("pyclip")
             try:
                 clipboard = str(pyclip.paste())
             except Exception as err:
@@ -313,9 +348,9 @@ class QuickWhisper:
 
             assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
             assert len(text) < 10000, f"Suspiciously large text content: {len(text)}"
-            wait_for_module("completion")
+            self.wait_for_module("completion")
             LLM_response = completion(
-                model=model,
+                model=llm_model,
                 messages=[
                     {
                         "role": "system",
@@ -384,16 +419,16 @@ class QuickWhisper:
             messages.append({"role": "user", "content": text})
 
             self.log(f"Calling LLM with messages: '{messages}'")
-            wait_for_module("completion")
-            LLM_response = completion(model=model, messages=messages)
+            self.wait_for_module("completion")
+            LLM_response = completion(model=llm_model, messages=messages)
             answer = LLM_response.json()["choices"][0]["message"]["content"]
             self.log(f'LLM answer to the chat: "{answer}"')
             self.notif(answer)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
-                wait_for_module("wave")
-                wait_for_module("voice")
+                self.wait_for_module("wave")
+                self.wait_for_module("voice")
                 try:
                     self.log(f"Synthesizing speech to {vocal_file_mp3}")
                     with wave.open(vocal_file_mp3, "wb") as wav_file:
@@ -407,7 +442,7 @@ class QuickWhisper:
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
-                wait_for_module("OpenAI")
+                self.wait_for_module("OpenAI")
                 try:
                     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
                     response = client.audio.speech.create(
@@ -483,6 +518,20 @@ class QuickWhisper:
             )
             raise SystemExit()
 
+    def wait_for_module(self, module: str, timeout: int = 10) -> None:
+        "sleep while the module is not imported by importer"
+        # cnt = 0
+        start = time.time()
+        while time.time() - start < timeout:
+            if module in globals():
+                return
+            # elif cnt % 10 == 0:
+            #     print(f"WAITING FOR {module}")
+            assert self.import_thread.is_alive(), "Importer thread is not running, it encountered an error"
+            time.sleep(0.001)
+            # cnt += 1
+        raise Exception(f"Module not imported in time: {module}")
+
 
 def importer(import_list: List[str]) -> None:
     """
@@ -495,20 +544,8 @@ def importer(import_list: List[str]) -> None:
             exec(import_str, globals())
         except Exception as err:
             raise Exception(f"Error when importing module '{import_str}': {err}'")
-
-def wait_for_module(module: str, timeout: int = 2) -> None:
-    "sleep while the module is not imported by importer"
-    # cnt = 0
-    start = time.time()
-    while time.time() - start < timeout:
-        if module in globals() and globals()[module] is not None:
-            return
-        # elif cnt % 10 == 0:
-        #     print(f"WAITING FOR {module}")
-        assert import_thread.is_alive(), "Importer thread is not running, it encountered an error"
-        time.sleep(0.001)
-        # cnt += 1
-    raise Exception(f"Module not imported in time: {module}")
+        if DEBUG_IMPORT:
+            print(f"THREAD: {import_str}")
 
 
 if __name__ == "__main__":
@@ -519,40 +556,6 @@ if __name__ == "__main__":
     if "help" in kwargs:
         print(help(QuickWhisper))
         raise SystemExit()
-
-    # to reduce startup time, modules are imported in a thread
-    to_import = [
-        "from playsound import playsound as playsound",
-        "from plyer import notification as notification",
-        "import tempfile",
-        "import subprocess"
-    ]
-    if "gui" in kwargs and kwargs["gui"]:
-        to_import.append("import PySimpleGUI as sg")
-    else:
-        to_import.append("from pynput import keyboard")
-    to_import.append("import os")
-    if "sound_cleanup" in kwargs and kwargs["sound_cleanup"]:
-        to_import.append("import torchaudio")
-        to_import.append("import soundfile as sf")
-    to_import.append("from litellm import completion, transcription")
-    if "task" in kwargs:
-        if kwargs["task"] == "write":
-            to_import.append("import json")
-        if kwargs["task"] == "write" or kwargs["task"] == "transform_clipboard":
-            to_import.append("import pyclip")
-        if "voice" in kwargs["task"]:
-            if "voice_engine" in kwargs:
-                if kwargs["voice_engine"] == "piper":
-                    to_import.append("from piper.voice import PiperVoice as piper")
-                    to_import.append("import wave")
-                    if "piper_model_path" in kwargs and kwargs["piper_model_path"]:
-                        to_import.append(f"voice = piper.load('{kwargs['piper_model_path']}')")
-                elif kwargs["voice_engine"] == "openai":
-                    to_import.append("from openai import OpenAI")
-    global import_thread
-    import_thread = threading.Thread(target=importer, args=(to_import,))
-    import_thread.start()
 
     try:
         QuickWhisper(**kwargs)
