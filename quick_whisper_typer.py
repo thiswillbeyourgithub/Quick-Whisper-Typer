@@ -5,97 +5,50 @@ import subprocess
 import time
 
 
-# import pyautogui
-
-# Set up variables and prompts
-prompts = {
-    "fr": None,
-    "en": None,
-    # "fr": "Dictee voicee sur mon telephone: ",
-    # "en": "Dictation on my smartphone: "
-}
-system_prompts = {
-    "voice": "You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash.",
-    "transform_clipboard": "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else.",
-}
-speaker_models = {"fr": "fr_FR-gilles-low", "en": "en_US-lessac-medium"}
-allowed_tasks = (
-    "transform_clipboard",
-    "new_voice_chat",
-    "continue_voice_chat",
-    "write",
-    "custom",
-)
-
-sox_cleanup = [
-    # isolate voice frequency
-    # -2 is for a steeper filtering
-    ["highpass", "-1", "100"],
-    ["lowpass", "-1", "3000"],
-    # removes high frequency and very low ones
-    ["highpass", "-2", "50"],
-    ["lowpass", "-2", "5000"],
-    # # normalize audio
-    ["norm"],
-    # max silence should be 1s
-    ["silence", "-l", "1", "0", "0.5%", "-1", "1.0", "0.1%"],
-    # # remove leading silence
-    # ["vad", "-p", "0.2", "-t", "5"],
-    # # # and ending silence, this might be unecessary for splitted audio
-    # ["reverse"],
-    # ["vad", "-p", "0.2", "-t", "5"],
-    # ["reverse"],
-    # add blank sound to help whisper
-    ["pad", "0.2@0"],
-]
-
-
-def log(message):
-    print(message)
-    with open("texts.log", "a") as f:
-        f.write(f"{int(time.time())} {message}\n")
-    return message
-
-
-def notif(message):
-    from plyer import notification
-
-    notification.notify(title="Quick Whisper", message=message, timeout=-1)
-
-
-def popup(prompt, task, lang):
-    import PySimpleGUI as sg
-
-    title = "Sound Recorder"
-
-    layout = [
-        [sg.Text(f"TASK: {task}\nLANG: {lang}")],
-        [sg.Text("Whisper prompt"), sg.Input(prompt)],
-        [sg.Text("LLM instruction"), sg.Input()],
-        [
-            sg.Button("Cancel", key="-CANCEL-", button_color="blue"),
-            sg.Button("Go!", key="-GO-", button_color="red"),
-        ],
-    ]
-
-    window = sg.Window(title, layout, keep_on_top=True)
-    event, values = window.read()
-    window.close()
-
-    if event == "-GO-":
-        whisper_prompt = values[0]
-        LLM_instruction = values[1]
-        log(f"Whisper prompt: {whisper_prompt} for task {task}")
-        return whisper_prompt, LLM_instruction
-    else:
-        log("Pressed cancel or escape. Exiting.")
-        subprocess.run(
-            ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        raise SystemExit()
 
 
 class QuickWhisper:
+    # Set up variables and prompts
+    prompts = {
+        "fr": None,
+        "en": None,
+        # "fr": "Dictee voicee sur mon telephone: ",
+        # "en": "Dictation on my smartphone: "
+    }
+    system_prompts = {
+        "voice": "You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash.",
+        "transform_clipboard": "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else.",
+    }
+    speaker_models = {"fr": "fr_FR-gilles-low", "en": "en_US-lessac-medium"}
+    allowed_tasks = (
+        "transform_clipboard",
+        "new_voice_chat",
+        "continue_voice_chat",
+        "write",
+        "custom",
+    )
+    sox_cleanup = [
+        # isolate voice frequency
+        # -2 is for a steeper filtering
+        ["highpass", "-1", "100"],
+        ["lowpass", "-1", "3000"],
+        # removes high frequency and very low ones
+        ["highpass", "-2", "50"],
+        ["lowpass", "-2", "5000"],
+        # # normalize audio
+        ["norm"],
+        # max silence should be 1s
+        ["silence", "-l", "1", "0", "0.5%", "-1", "1.0", "0.1%"],
+        # # remove leading silence
+        # ["vad", "-p", "0.2", "-t", "5"],
+        # # # and ending silence, this might be unecessary for splitted audio
+        # ["reverse"],
+        # ["vad", "-p", "0.2", "-t", "5"],
+        # ["reverse"],
+        # add blank sound to help whisper
+        ["pad", "0.2@0"],
+    ]
+
     def __init__(
         self,
         lang,
@@ -165,15 +118,15 @@ class QuickWhisper:
 
         # Selecting prompt based on language
         if not whisper_prompt:
-            whisper_prompt = prompts[lang]
+            whisper_prompt = self.prompts[lang]
 
         # Checking that the task is allowed
         task = task.replace("-", "_").lower()
         assert (
-            task != "" and task in allowed_tasks
-        ), f"Invalid task {task} not part of {allowed_tasks}"
+            task != "" and task in self.allowed_tasks
+        ), f"Invalid task {task} not part of {self.allowed_tasks}"
 
-        log(f"Will use language {lang} and prompt {whisper_prompt} and task {task}")
+        self.log(f"Will use language {lang} and prompt {whisper_prompt} and task {task}")
 
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
@@ -185,12 +138,12 @@ class QuickWhisper:
         )
 
         # Start recording
-        log(f"Recording {file}")
+        self.log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
         time.sleep(0.2)  # delay to properly recod
         from playsound import playsound
 
-        notif("Listening")
+        self.notif("Listening")
         playsound("sounds/Slick.ogg")
 
         if daemon_mode is not False:
@@ -198,22 +151,22 @@ class QuickWhisper:
                 raise NotImplementedError()
         elif gui is True:
             # Show recording form
-            whisper_prompt, LLM_instruction = popup(whisper_prompt, task, lang)
+            whisper_prompt, LLM_instruction = self.popup(whisper_prompt, task, lang)
         else:
             from pynput import keyboard
 
             def released_shift(key):
                 if key == keyboard.Key.shift:
-                    log("Pressed shift.")
+                    self.log("Pressed shift.")
                     time.sleep(1)
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
-                    notif(log("Pressed escape or spacebar: quitting."))
+                    self.notif(self.log("Pressed escape or spacebar: quitting."))
                     os.system("killall rec")
                     raise SystemExit("Quitting.")
 
             with keyboard.Listener(on_release=released_shift) as listener:
-                log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
+                self.log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
 
                 # import last minute to be quicker to launch
                 if sound_cleanup:
@@ -234,42 +187,42 @@ class QuickWhisper:
             ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         end_time = time.time()
-        log(f"Done recording {file}")
+        self.log(f"Done recording {file}")
         if gui is False:
-            notif("Analysing")
+            self.notif("Analysing")
             playsound("sounds/Rhodes.ogg")
 
         if sound_cleanup:
             # clean up the sound
-            log("Cleaning up sound")
+            self.log("Cleaning up sound")
 
             try:
                 waveform, sample_rate = torchaudio.load(file)
                 waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
                     waveform,
                     sample_rate,
-                    sox_cleanup,
+                    self.sox_cleanup,
                 )
                 file2 = file.replace(".mp3", "") + "_clean.wav"
                 sf.write(str(file2), waveform.numpy().T,
                          sample_rate, format="wav")
                 file = file2
             except Exception as err:
-                log(f"Error when cleaning up sound: {err}")
+                self.log(f"Error when cleaning up sound: {err}")
 
         # Check duration
         duration = end_time - start_time
-        log(f"Duration {duration}")
+        self.log(f"Duration {duration}")
         if duration < min_duration:
-            notif(
-                log(
+            self.notif(
+                self.log(
                     f"Recording too short ({duration} s), exiting without calling whisper."
                 )
             )
             raise SystemExit()
 
         # Call whisper
-        log("Calling whisper")
+        self.log("Calling whisper")
         with open(file, "rb") as f:
             transcript_response = transcription(
                 model="whisper-1",
@@ -279,7 +232,7 @@ class QuickWhisper:
                 temperature=0,
             )
         text = transcript_response.text
-        notif(log(f"Transcript: {text}"))
+        self.notif(self.log(f"Transcript: {text}"))
 
         import pyclip
 
@@ -287,11 +240,11 @@ class QuickWhisper:
             try:
                 clipboard = pyclip.paste()
             except Exception as err:
-                log(f"Erasing the previous clipboard because error when loding it: {err}")
+                self.log(f"Erasing the previous clipboard because error when loding it: {err}")
                 clipboard = ""
 
             if LLM_instruction:
-                log(
+                self.log(
                     f"Calling {model} to transfrom the transcript to follow "
                     f"those instructions: {LLM_instruction}"
                 )
@@ -306,7 +259,7 @@ class QuickWhisper:
                     },
                 ]
                 import json
-                log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4, ensure_ascii=False)}")
+                self.log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4, ensure_ascii=False)}")
 
                 LLM_response = completion(
                     model=model,
@@ -314,22 +267,22 @@ class QuickWhisper:
                 )
                 answer = LLM_response.json(
                 )["choices"][0]["message"]["content"]
-                log(f'LLM output: "{answer}"')
+                self.log(f'LLM output: "{answer}"')
                 text = answer
 
-            log("Pasting clipboard")
+            self.log("Pasting clipboard")
             # pyautogui.click()
             pyclip.copy(text)
             if auto_paste:
                 os.system("xdotool key ctrl+v")
                 pyclip.copy(clipboard)
-                log("Clipboard reset")
+                self.log("Clipboard reset")
 
-            notif("Done")
+            self.notif("Done")
             playsound("sounds/Positive.ogg")
 
         elif task == "transform_clipboard":
-            log(
+            self.log(
                 f'Calling LLM with instruction "{text}" and tasked to transform the clipboard'
             )
 
@@ -340,12 +293,12 @@ class QuickWhisper:
                         f"Error when loading content of clipboard: {err}")
 
             if not clipboard:
-                notif(log("Clipboard is empty, this is not compatible with the task"))
+                self.notif(self.log("Clipboard is empty, this is not compatible with the task"))
                 raise SystemExit()
             if isinstance(clipboard, str):
-                log(f"Clipboard previous content: '{clipboard}'")
+                self.log(f"Clipboard previous content: '{clipboard}'")
             elif isinstance(clipboard, bytes):
-                log(f"Clipboard previous content is binary")
+                self.log(f"Clipboard previous content is binary")
 
             assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
             assert len(text) < 10000, f"Suspiciously large text content: {len(text)}"
@@ -354,7 +307,7 @@ class QuickWhisper:
                 messages=[
                     {
                         "role": "system",
-                        "content": system_prompts["transform_clipboard"],
+                        "content": self.system_prompts["transform_clipboard"],
                     },
                     {
                         "role": "user",
@@ -363,26 +316,26 @@ class QuickWhisper:
                 ],
             )
             answer = LLM_response.json()["choices"][0]["message"]["content"]
-            log(f'LLM clipboard transformation: "{answer}"')
+            self.log(f'LLM clipboard transformation: "{answer}"')
 
-            log("Pasting clipboard")
+            self.log("Pasting clipboard")
             # pyautogui.click()
             pyclip.copy(answer)
-            notif(answer)
+            self.notif(answer)
             if auto_paste:
                 os.system("xdotool key ctrl+v")
                 pyclip.copy(clipboard)
-                log("Clipboard reset")
+                self.log("Clipboard reset")
 
             playsound("sounds/Positive.ogg")
 
         elif "voice_chat" in task:
             if "new" in task:
                 voice_file = f"/tmp/quick_whisper_chat_{int(time.time())}.txt"
-                log(f"Creating new voice chat file: {voice_file}")
+                self.log(f"Creating new voice chat file: {voice_file}")
 
                 messages = [
-                    {"role": "system", "content": system_prompts["voice"]},
+                    {"role": "system", "content": self.system_prompts["voice"]},
                 ]
 
             elif "continue" in task:
@@ -395,13 +348,13 @@ class QuickWhisper:
                     voice_files, key=lambda x: x.stat().st_ctime)
                 voice_file = voice_files[-1]
 
-                log(f"Reusing previous voice chat file: {voice_file}")
+                self.log(f"Reusing previous voice chat file: {voice_file}")
 
                 with open(voice_file, "r") as f:
                     lines = [line.strip() for line in f.readlines()]
 
                 messages = [
-                    {"role": "system", "content": system_prompts["voice"]}]
+                    {"role": "system", "content": self.system_prompts["voice"]}]
                 role = "assistant"
                 for line in lines:
                     if not line:
@@ -418,11 +371,11 @@ class QuickWhisper:
 
             messages.append({"role": "user", "content": text})
 
-            log(f"Calling LLM with messages: '{messages}'")
+            self.log(f"Calling LLM with messages: '{messages}'")
             LLM_response = completion(model=model, messages=messages)
             answer = LLM_response.json()["choices"][0]["message"]["content"]
-            log(f'LLM answer to the chat: "{answer}"')
-            notif(answer)
+            self.log(f'LLM answer to the chat: "{answer}"')
+            self.notif(answer)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
@@ -436,17 +389,17 @@ class QuickWhisper:
                             "-m",
                             "piper",
                             "--model",
-                            speaker_models[lang],
+                            self.speaker_models[lang],
                             "--output_file",
                             vocal_file_mp3,
                         ]
                     )
 
-                    log(f"Playing voice file: {vocal_file_mp3}")
+                    self.log(f"Playing voice file: {vocal_file_mp3}")
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(
-                        log(f"Error when using piper so will use espeak: '{err}'"))
+                    self.notif(
+                        self.log(f"Error when using piper so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
@@ -463,8 +416,8 @@ class QuickWhisper:
                     response.stream_to_file(vocal_file_mp3)
                     playsound(vocal_file_mp3)
                 except Exception as err:
-                    notif(
-                        log(f"Error when using openai so will use espeak: '{err}'"))
+                    self.notif(
+                        self.log(f"Error when using openai so will use espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
@@ -473,7 +426,7 @@ class QuickWhisper:
                 )
 
             if voice_engine is None:
-                log("voice_engine is None so not speaking.")
+                self.log("voice_engine is None so not speaking.")
 
             # Add text and answer to the file
             with open(voice_file, "a") as f:
@@ -482,7 +435,52 @@ class QuickWhisper:
                 f.write("\n#####\n")
                 f.write(f"{answer}\n")
 
-        log("Done.")
+        self.log("Done.")
+
+    def log(self, message):
+        print(message)
+        with open("texts.log", "a") as f:
+            f.write(f"{int(time.time())} {message}\n")
+        return message
+
+
+    def notif(self, message):
+        from plyer import notification
+
+        notification.notify(title="Quick Whisper", message=message, timeout=-1)
+
+
+    def popup(self, prompt, task, lang):
+        import PySimpleGUI as sg
+
+        title = "Sound Recorder"
+
+        layout = [
+            [sg.Text(f"TASK: {task}\nLANG: {lang}")],
+            [sg.Text("Whisper prompt"), sg.Input(prompt)],
+            [sg.Text("LLM instruction"), sg.Input()],
+            [
+                sg.Button("Cancel", key="-CANCEL-", button_color="blue"),
+                sg.Button("Go!", key="-GO-", button_color="red"),
+            ],
+        ]
+
+        window = sg.Window(title, layout, keep_on_top=True)
+        event, values = window.read()
+        window.close()
+
+        if event == "-GO-":
+            whisper_prompt = values[0]
+            LLM_instruction = values[1]
+            log(f"Whisper prompt: {whisper_prompt} for task {task}")
+            return whisper_prompt, LLM_instruction
+        else:
+            log("Pressed cancel or escape. Exiting.")
+            subprocess.run(
+                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            raise SystemExit()
+
 
 
 if __name__ == "__main__":
