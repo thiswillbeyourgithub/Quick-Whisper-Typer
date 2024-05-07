@@ -1,9 +1,7 @@
-import os
+from typing import List
+import threading
 from pathlib import Path
-import tempfile
-import subprocess
 import time
-
 
 
 class QuickWhisper:
@@ -20,7 +18,6 @@ class QuickWhisper:
         "new_voice_chat",
         "continue_voice_chat",
         "write",
-        "custom",
     )
     allowed_voice_engine = ("openai", "piper", "espeak", None)
 
@@ -139,11 +136,14 @@ class QuickWhisper:
 
         self.log(f"Will use prompt {whisper_prompt} and task {task}")
 
+        print("tempfile" in globals())
+        wait_for_module("tempfile")
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
 
         # Kill any previously running recordings
         start_time = time.time()
+        wait_for_module("subprocess")
         subprocess.run(
             ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
@@ -151,9 +151,10 @@ class QuickWhisper:
         # Start recording
         self.log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
-        from playsound import playsound
 
+        wait_for_module("playsound")
         self.notif("Listening")
+        wait_for_module("playsound")
         playsound("sounds/Slick.ogg")
 
         if daemon_mode is not False:
@@ -166,8 +167,7 @@ class QuickWhisper:
                 task,
                 )
         else:
-            from pynput import keyboard
-
+            wait_for_module("keyboard")
             def released_shift(key):
                 if key == keyboard.Key.shift:
                     self.log("Pressed shift.")
@@ -180,13 +180,6 @@ class QuickWhisper:
 
             with keyboard.Listener(on_release=released_shift) as listener:
                 self.log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
-
-                # import last minute to be quicker to launch
-                if sound_cleanup:
-                    import soundfile as sf
-                    import torchaudio
-
-                from litellm import completion, transcription
 
                 for path in list(Path(".").rglob("./*API_KEY.txt")):
                     backend = path.name.split("_API_KEY.txt")[0]
@@ -220,6 +213,8 @@ class QuickWhisper:
             # clean up the sound
             self.log("Cleaning up sound")
 
+            wait_for_module("torchaudio")
+            wait_for_module("sf")
             try:
                 waveform, sample_rate = torchaudio.load(file)
                 waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
@@ -238,6 +233,7 @@ class QuickWhisper:
         # Call whisper
         self.log("Calling whisper")
         with open(file, "rb") as f:
+            wait_for_module("transcription")
             transcript_response = transcription(
                 model="whisper-1",
                 file=f,
@@ -248,9 +244,8 @@ class QuickWhisper:
         text = transcript_response.text
         self.notif(self.log(f"Transcript: {text}"))
 
-        import pyclip
-
         if task == "write":
+            wait_for_module("pyclip")
             try:
                 clipboard = pyclip.paste()
             except Exception as err:
@@ -272,9 +267,10 @@ class QuickWhisper:
                         "content": text,
                     },
                 ]
-                import json
+                wait_for_module("json")
                 self.log(f"Messages sent to LLM:\n{json.dumps(messages, indent=4, ensure_ascii=False)}")
 
+                wait_for_module("completion")
                 LLM_response = completion(
                     model=model,
                     messages=messages,
@@ -300,6 +296,7 @@ class QuickWhisper:
                 f'Calling LLM with instruction "{text}" and tasked to transform the clipboard'
             )
 
+            wait_for_module("pyclip")
             try:
                 clipboard = str(pyclip.paste())
             except Exception as err:
@@ -316,6 +313,7 @@ class QuickWhisper:
 
             assert len(clipboard) < 10000, f"Suspiciously large clipboard content: {len(clipboard)}"
             assert len(text) < 10000, f"Suspiciously large text content: {len(text)}"
+            wait_for_module("completion")
             LLM_response = completion(
                 model=model,
                 messages=[
@@ -386,6 +384,7 @@ class QuickWhisper:
             messages.append({"role": "user", "content": text})
 
             self.log(f"Calling LLM with messages: '{messages}'")
+            wait_for_module("completion")
             LLM_response = completion(model=model, messages=messages)
             answer = LLM_response.json()["choices"][0]["message"]["content"]
             self.log(f'LLM answer to the chat: "{answer}"')
@@ -393,11 +392,9 @@ class QuickWhisper:
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
+                wait_for_module("wave")
+                wait_for_module("voice")
                 try:
-                    from piper.voice import PiperVoice as piper
-                    import wave
-                    voice = piper.load(piper_model_path)
-
                     self.log(f"Synthesizing speech to {vocal_file_mp3}")
                     with wave.open(vocal_file_mp3, "wb") as wav_file:
                         voice.synthesize(answer, wav_file)
@@ -410,8 +407,8 @@ class QuickWhisper:
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
+                wait_for_module("OpenAI")
                 try:
-                    from openai import OpenAI
                     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
                     response = client.audio.speech.create(
                         model="tts-1",
@@ -454,14 +451,10 @@ class QuickWhisper:
 
     @classmethod
     def notif(self, message: str) -> str:
-        from plyer import notification
-
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
 
     def gui(self, prompt: str, task: str) -> str:
-        import PySimpleGUI as sg
-
         title = "Sound Recorder"
 
         layout = [
@@ -491,16 +484,81 @@ class QuickWhisper:
             raise SystemExit()
 
 
+def importer(import_list: List[str]) -> None:
+    """
+    multithreading to import module and reduce startup time
+    source: https://stackoverflow.com/questions/46698837/can-i-import-modules-from-thread-in-python
+    """
+    global playsound, notification, tempfile, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI
+    for import_str in import_list:
+        try:
+            exec(import_str, globals())
+        except Exception as err:
+            raise Exception(f"Error when importing module '{import_str}': {err}'")
+
+def wait_for_module(module: str, timeout: int = 2) -> None:
+    "sleep while the module is not imported by importer"
+    # cnt = 0
+    start = time.time()
+    while time.time() - start < timeout:
+        if module in globals() and globals()[module] is not None:
+            return
+        # elif cnt % 10 == 0:
+        #     print(f"WAITING FOR {module}")
+        assert import_thread.is_alive(), "Importer thread is not running, it encountered an error"
+        time.sleep(0.001)
+        # cnt += 1
+    raise Exception(f"Module not imported in time: {module}")
+
 
 if __name__ == "__main__":
     import fire
     args, kwargs = fire.Fire(lambda *args, **kwargs: [args, kwargs])
+    if args:
+        raise Exception(f"Non keyword args are not supported: {args}")
     if "help" in kwargs:
         print(help(QuickWhisper))
         raise SystemExit()
+
+    # to reduce startup time, modules are imported in a thread
+    to_import = [
+        "from playsound import playsound as playsound",
+        "from plyer import notification as notification",
+        "import tempfile",
+        "import subprocess"
+    ]
+    if "gui" in kwargs and kwargs["gui"]:
+        to_import.append("import PySimpleGUI as sg")
+    else:
+        to_import.append("from pynput import keyboard")
+    to_import.append("import os")
+    if "sound_cleanup" in kwargs and kwargs["sound_cleanup"]:
+        to_import.append("import torchaudio")
+        to_import.append("import soundfile as sf")
+    to_import.append("from litellm import completion, transcription")
+    if "task" in kwargs:
+        if kwargs["task"] == "write":
+            to_import.append("import json")
+        if kwargs["task"] == "write" or kwargs["task"] == "transform_clipboard":
+            to_import.append("import pyclip")
+        if "voice" in kwargs["task"]:
+            if "voice_engine" in kwargs:
+                if kwargs["voice_engine"] == "piper":
+                    to_import.append("from piper.voice import PiperVoice as piper")
+                    to_import.append("import wave")
+                    if "piper_model_path" in kwargs and kwargs["piper_model_path"]:
+                        to_import.append(f"voice = piper.load('{kwargs['piper_model_path']}')")
+                elif kwargs["voice_engine"] == "openai":
+                    to_import.append("from openai import OpenAI")
+    global import_thread
+    import_thread = threading.Thread(target=importer, args=(to_import,))
+    import_thread.start()
+
     try:
-        QuickWhisper(*args, **kwargs)
+        QuickWhisper(**kwargs)
     except Exception as err:
+        import os
         os.system("killall rec")
+        from plyer import notification
         QuickWhisper.notif(f"Error: {err}")
         raise
