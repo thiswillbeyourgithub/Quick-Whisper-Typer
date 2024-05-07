@@ -14,8 +14,12 @@ class QuickWhisper:
         # "en": "Dictation on my smartphone: "
     }
     system_prompts = {
-        "voice": "You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash.",
-        "transform_clipboard": "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else.",
+        "voice": "You are a helpful assistant. I am in a hurry and your "
+            "answers will be played on speaker so use as few words as you "
+            "can while remaining helpful and truthful. Don't use too short "
+            "sentences otherwise the speakers will crash.",
+        "transform_clipboard": "You transform INPUT_TEXT according to an "
+            "instruction. Only reply the transformed text without anything else.",
     }
     piper_speaker_models = {
         "fr": "fr_FR-gilles-low",
@@ -28,6 +32,8 @@ class QuickWhisper:
         "write",
         "custom",
     )
+
+    # arguments to do voice cleanup before sending to whisper
     sox_cleanup = [
         # isolate voice frequency
         # -2 is for a steeper filtering
