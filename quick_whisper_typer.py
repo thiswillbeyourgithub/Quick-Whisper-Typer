@@ -487,9 +487,12 @@ class QuickWhisper:
 
 if __name__ == "__main__":
     import fire
-
+    args, kwargs = fire.Fire(lambda *args, **kwargs: [args, kwargs])
+    if "help" in kwargs:
+        print(help(QuickWhisper))
+        raise SystemExit()
     try:
-        fire.Fire(QuickWhisper)
+        QuickWhisper(*args, **kwargs)
     except Exception as err:
         os.system("killall rec")
         notif(f"Error: {err}")
