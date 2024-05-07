@@ -49,17 +49,17 @@ class QuickWhisper:
 
     def __init__(
         self,
-        task=None,
-        model="openai/gpt-3.5-turbo-0125",
-        auto_paste=False,
-        sound_cleanup=False,
-        whisper_prompt=None,
-        whisper_lang=None,
-        voice_engine=None,
-        piper_model_path=None,
-        LLM_instruction=None,
-        gui=False,
-        daemon_mode=False,
+        task: str = None,
+        model: str = "openai/gpt-3.5-turbo-0125",
+        auto_paste: bool = False,
+        sound_cleanup: bool = False,
+        whisper_prompt: str = None,
+        whisper_lang: str = None,
+        voice_engine: str = None,
+        piper_model_path: str = None,
+        LLM_instruction: str = None,
+        gui: bool = False,
+        daemon_mode: bool = False,
     ):
         """
         Parameters
@@ -161,7 +161,7 @@ class QuickWhisper:
                 raise NotImplementedError()
         elif gui is True:
             # Show recording form
-            whisper_prompt, LLM_instruction = self.popup(
+            whisper_prompt, LLM_instruction = self.gui(
                 whisper_prompt,
                 task,
                 )
@@ -445,7 +445,7 @@ class QuickWhisper:
         self.log("Done.")
 
     @classmethod
-    def log(self, message):
+    def log(self, message: str) -> str:
         print(message)
         with open("texts.log", "a") as f:
             f.write(f"{int(time.time())} {message}\n")
@@ -453,13 +453,13 @@ class QuickWhisper:
 
 
     @classmethod
-    def notif(self, message):
+    def notif(self, message: str) -> str:
         from plyer import notification
 
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
 
-    def popup(self, prompt, task):
+    def gui(self, prompt: str, task: str) -> str:
         import PySimpleGUI as sg
 
         title = "Sound Recorder"
