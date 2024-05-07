@@ -7,12 +7,6 @@ import time
 
 
 class QuickWhisper:
-    prompts = {
-        "fr": None,
-        "en": None,
-        # "fr": "Dictee voicee sur mon telephone: ",
-        # "en": "Dictation on my smartphone: "
-    }
     system_prompts = {
         "voice": "You are a helpful assistant. I am in a hurry and your "
             "answers will be played on speaker so use as few words as you "
@@ -21,10 +15,6 @@ class QuickWhisper:
         "transform_clipboard": "You transform INPUT_TEXT according to an "
             "instruction. Only reply the transformed text without anything else.",
     }
-    piper_speaker_models = {
-        "fr": "fr_FR-gilles-low",
-        "en": "en_US-lessac-medium"
-    }
     allowed_tasks = (
         "transform_clipboard",
         "new_voice_chat",
@@ -32,6 +22,7 @@ class QuickWhisper:
         "write",
         "custom",
     )
+    allowed_voice_engine = ("openai", "piper", "espeak", None)
 
     # arguments to do voice cleanup before sending to whisper
     sox_cleanup = [
@@ -58,59 +49,73 @@ class QuickWhisper:
 
     def __init__(
         self,
-        lang,
-        task,
+        task=None,
         model="openai/gpt-3.5-turbo-0125",
         auto_paste=False,
-        gui=False,
         sound_cleanup=False,
-        voice_engine=None,
         whisper_prompt=None,
+        whisper_lang=None,
+        voice_engine=None,
+        piper_model_path=None,
         LLM_instruction=None,
+        gui=False,
         daemon_mode=False,
     ):
         """
         Parameters
         ----------
-        lang
-            fr, en
         task
             transform_clipboard, write, voice_chat
+
         model: str, default "openai/gpt-3.5-turbo-0125"
+
         auto_paste, default False
             if True, will use xdotool to paste directly. Otherwise just plays
             a sound to tell you that the clipboard was filled.
-        gui, default to False
-            if True, a window will open to allow to enter specific prompts etc
-            if False, no window is used and you have to press shift to stop the recording.
+
         sound_cleanup: bool, default False
-            if True, will try to clean up the sound before sending it to whisper
+            Clean up the sound before sending it to whisper, but this adds
+            latency depending of how powerful your computer is.
+            This uses sox, to modify the arguments, look at the value
+            of self.sox_cleanup
+
+        whisper_prompt: str, default None
+            prompt to given to whisper
+
+        whisper_lang: str, default None
+
         voice_engine, default None
             piper, openai, espeak, None
-        whisper_prompt: str
-            default to None
-        LLM_instruction: str
+
+        piper_model_path: str, default None
+            name of a piper model file.
+            For example 'en_US-lessac-medium'. Make sure you have 
+            a .onxx and .json file present.
+            More info: https://github.com/rhasspy/piper
+
+        LLM_instruction: str, default None
             if given, then the transcript will be given to an LLM and tasked
             to modify it according to those instructions. Meaning this is
             the system prompt.
+
+        gui, default to False
+            if True, a window will open to allow to enter specific prompts etc
+            if False, no window is used and you have to press shift to stop the recording.
+
         daemon_mode
             default to False. Designed for loop.py Is either False or a queue
             that stops listening when an item is received.
             if True, gui argument is ignored
         """
-        # Checking if the language is supplied and correct
-        allowed_langs = ("fr", "en")
-        assert (
-            lang != "" and lang in allowed_langs
-        ), f"Invalid lang {lang} not part of {allowed_langs}"
-
+        if not task:
+            raise Exception(f"You must specify a task from {self.allowed_tasks}")
         if gui is True:
             assert (
                 not whisper_prompt
             ), "whisper_prompt already given, shouldn't launch gui"
             assert (
                 not LLM_instruction
-            ), "whisper_prompt already given, shouldn't launch gui"
+            ), "LLM_instruction already given, shouldn't launch gui"
 
         if gui or LLM_instruction:
             assert "/" in model, f"LLM model name must be given in litellm format"
@@ -118,14 +123,13 @@ class QuickWhisper:
         # Checking voice engine
         if voice_engine == "None":
             voice_engine = None
-        allowed_voice_engine = ("openai", "piper", "espeak", None)
         assert (
-            "voice" not in task or voice_engine in allowed_voice_engine
-        ), f"Invalid voice engine {voice_engine} not part of {allowed_voice_engine}"
-
-        # Selecting prompt based on language
-        if not whisper_prompt:
-            whisper_prompt = self.prompts[lang]
+            "voice" not in task or voice_engine in self.allowed_voice_engine
+        ), f"Invalid voice engine {voice_engine} not part of {self.allowed_voice_engine}"
+        if voice_engine == "piper":
+            assert piper_model_path, "To use piper as a voice engine you must supply a piper_model_path value"
+            if not Path(piper_model_path).exists():
+                raise Exception(f"FileNotFound for pipermodelpath: {piper_model_path}")
 
         # Checking that the task is allowed
         task = task.replace("-", "_").lower()
@@ -133,7 +137,7 @@ class QuickWhisper:
             task != "" and task in self.allowed_tasks
         ), f"Invalid task {task} not part of {self.allowed_tasks}"
 
-        self.log(f"Will use language {lang} and prompt {whisper_prompt} and task {task}")
+        self.log(f"Will use prompt {whisper_prompt} and task {task}")
 
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
@@ -147,7 +151,6 @@ class QuickWhisper:
         # Start recording
         self.log(f"Recording {file}")
         subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
-        time.sleep(0.2)  # delay to properly recod
         from playsound import playsound
 
         self.notif("Listening")
@@ -158,7 +161,10 @@ class QuickWhisper:
                 raise NotImplementedError()
         elif gui is True:
             # Show recording form
-            whisper_prompt, LLM_instruction = self.popup(whisper_prompt, task, lang)
+            whisper_prompt, LLM_instruction = self.popup(
+                whisper_prompt,
+                task,
+                )
         else:
             from pynput import keyboard
 
@@ -195,9 +201,20 @@ class QuickWhisper:
         )
         end_time = time.time()
         self.log(f"Done recording {file}")
+        playsound("sounds/Rhodes.ogg")
         if gui is False:
             self.notif("Analysing")
-            playsound("sounds/Rhodes.ogg")
+
+        # Check duration
+        duration = end_time - start_time
+        self.log(f"Duration {duration}")
+        if duration < min_duration:
+            self.notif(
+                self.log(
+                    f"Recording too short ({duration} s), exiting without calling whisper."
+                )
+            )
+            raise SystemExit()
 
         if sound_cleanup:
             # clean up the sound
@@ -214,19 +231,9 @@ class QuickWhisper:
                 sf.write(str(file2), waveform.numpy().T,
                          sample_rate, format="wav")
                 file = file2
+                self.log("Done cleaning up sound")
             except Exception as err:
                 self.log(f"Error when cleaning up sound: {err}")
-
-        # Check duration
-        duration = end_time - start_time
-        self.log(f"Duration {duration}")
-        if duration < min_duration:
-            self.notif(
-                self.log(
-                    f"Recording too short ({duration} s), exiting without calling whisper."
-                )
-            )
-            raise SystemExit()
 
         # Call whisper
         self.log("Calling whisper")
@@ -234,7 +241,7 @@ class QuickWhisper:
             transcript_response = transcription(
                 model="whisper-1",
                 file=f,
-                language=lang,
+                language=whisper_lang,
                 prompt=whisper_prompt,
                 temperature=0,
             )
@@ -386,31 +393,20 @@ class QuickWhisper:
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
-                if lang not in self.piper_speaker_models:
-                    raise Exception(f"{lang} not part of piper_speaker_models")
-                if not Path(self.piper_speaker_models[lang]).exists():
-                    raise Exception(f"piper file not found: '{self.piper_speaker_models}'")
                 try:
-                    subprocess.run(
-                        [
-                            "echo",
-                            answer,
-                            "|",
-                            "python",
-                            "-m",
-                            "piper",
-                            "--model",
-                            self.piper_speaker_models[lang],
-                            "--output_file",
-                            vocal_file_mp3,
-                        ]
-                    )
+                    from piper.voice import PiperVoice as piper
+                    import wave
+                    voice = piper.load(piper_model_path)
+
+                    self.log(f"Synthesizing speech to {vocal_file_mp3}")
+                    with wave.open(vocal_file_mp3, "wb") as wav_file:
+                        voice.synthesize(answer, wav_file)
 
                     self.log(f"Playing voice file: {vocal_file_mp3}")
                     playsound(vocal_file_mp3)
                 except Exception as err:
                     self.notif(
-                        self.log(f"Error when using piper so will use espeak: '{err}'"))
+                        self.log(f"Error with piper, trying with espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "openai":
@@ -428,16 +424,16 @@ class QuickWhisper:
                     playsound(vocal_file_mp3)
                 except Exception as err:
                     self.notif(
-                        self.log(f"Error when using openai so will use espeak: '{err}'"))
+                        self.log(f"Error with openai voice_engine, trying with espeak: '{err}'"))
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
                 subprocess.run(
-                    ["espeak", "-v", lang, "-p", "20", "-s", "110", "-z", answer]
+                    ["espeak", "-v", whisper_lang, "-p", "20", "-s", "110", "-z", answer]
                 )
 
             if voice_engine is None:
-                self.log("voice_engine is None so not speaking.")
+                self.log("voice_engine is None: not speaking.")
 
             # Add text and answer to the file
             with open(voice_file, "a") as f:
@@ -448,6 +444,7 @@ class QuickWhisper:
 
         self.log("Done.")
 
+    @classmethod
     def log(self, message):
         print(message)
         with open("texts.log", "a") as f:
@@ -455,19 +452,20 @@ class QuickWhisper:
         return message
 
 
+    @classmethod
     def notif(self, message):
         from plyer import notification
 
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
 
-    def popup(self, prompt, task, lang):
+    def popup(self, prompt, task):
         import PySimpleGUI as sg
 
         title = "Sound Recorder"
 
         layout = [
-            [sg.Text(f"TASK: {task}\nLANG: {lang}")],
+            [sg.Text(f"TASK: {task}")],
             [sg.Text("Whisper prompt"), sg.Input(prompt)],
             [sg.Text("LLM instruction"), sg.Input()],
             [
@@ -483,10 +481,10 @@ class QuickWhisper:
         if event == "-GO-":
             whisper_prompt = values[0]
             LLM_instruction = values[1]
-            log(f"Whisper prompt: {whisper_prompt} for task {task}")
+            self.log(f"Whisper prompt: {whisper_prompt} for task {task}")
             return whisper_prompt, LLM_instruction
         else:
-            log("Pressed cancel or escape. Exiting.")
+            self.log("Pressed cancel or escape. Exiting.")
             subprocess.run(
                 ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
@@ -504,5 +502,5 @@ if __name__ == "__main__":
         QuickWhisper(*args, **kwargs)
     except Exception as err:
         os.system("killall rec")
-        notif(f"Error: {err}")
+        QuickWhisper.notif(f"Error: {err}")
         raise
