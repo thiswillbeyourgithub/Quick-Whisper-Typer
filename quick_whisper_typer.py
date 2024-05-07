@@ -6,9 +6,7 @@ import time
 
 
 
-
 class QuickWhisper:
-    # Set up variables and prompts
     prompts = {
         "fr": None,
         "en": None,
@@ -19,7 +17,10 @@ class QuickWhisper:
         "voice": "You are a helpful assistant. I am in a hurry and your answers will be played on speaker so use as few words as you can while remaining helpful and truthful. Don't use too short sentences otherwise the speakers will crash.",
         "transform_clipboard": "You transform INPUT_TEXT according to an instruction. Only reply the transformed text without anything else.",
     }
-    speaker_models = {"fr": "fr_FR-gilles-low", "en": "en_US-lessac-medium"}
+    piper_speaker_models = {
+        "fr": "fr_FR-gilles-low",
+        "en": "en_US-lessac-medium"
+    }
     allowed_tasks = (
         "transform_clipboard",
         "new_voice_chat",
@@ -379,6 +380,10 @@ class QuickWhisper:
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
+                if lang not in self.piper_speaker_models:
+                    raise Exception(f"{lang} not part of piper_speaker_models")
+                if not Path(self.piper_speaker_models[lang]).exists():
+                    raise Exception(f"piper file not found: '{self.piper_speaker_models}'")
                 try:
                     subprocess.run(
                         [
@@ -389,7 +394,7 @@ class QuickWhisper:
                             "-m",
                             "piper",
                             "--model",
-                            self.speaker_models[lang],
+                            self.piper_speaker_models[lang],
                             "--output_file",
                             vocal_file_mp3,
                         ]
