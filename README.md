@@ -51,15 +51,14 @@ Super simple python script to start recording sound, send it to whisper then hav
 ```
 mode "$mode_launch_microphone" {
     # enter text
-    bindsym f exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task write, mode "default
+    bindsym f exec /PATH/TO/quick_whisper_typer.py --task write, mode "default
     # edit clipboard
-    bindsym e exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=transform_clipboard, mode "default"
-    bindsym v exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=continue_voice_chat, mode "default"
-    bindsym shift+V exec /PATH/TO/Quick_Whisper_Typer.py --lang en --task=new_voice_chat, mode "default"
+    bindsym e exec /PATH/TO/quick_whisper_typer.py --task=transform_clipboard, mode "default"
+    bindsym v exec /PATH/TO/quick_whisper_typer.py --task=continue_voice_chat, mode "default"
+    bindsym shift+V exec /PATH/TO/quick_whisper_typer.py --task=new_voice_chat, mode "default"
 
     bindsym Return mode "default"
     bindsym Escape mode "default"
-    bindsym $alt+pyift+r mode "default"
     }
 ```
 
