@@ -1,7 +1,7 @@
 playsound >= 1.3.0
 fire >= 0.6.0
 pyclip >= 0.7.0
-pysimplegui >= 4.60.5
+pysimplegui == 4.60.5
 openai >= 1.14.1
 pynput >= 1.7.6
 plyer >= 2.1.0
