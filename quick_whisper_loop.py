@@ -119,58 +119,31 @@ class Loop:
             if key.char == "n":
                 self.notif("Started voice chat")
                 kwargs["task"] = "new_voice_chat"
-                proc = mp.Process(
-                    target=QuickWhisper,
-                    kwargs=kwargs,
-                    daemon=False,
-                    )
-                proc.start()
-                self.b.listening = True
-                self.b.buff = []
-                self.waiting_for_letter = False
 
             elif key.char == "c":
                 self.notif("Continuing voice chat")
                 kwargs["task"] = "continue_voice_chat"
-                proc = mp.Process(
-                    target=QuickWhisper,
-                    kwargs=kwargs,
-                    daemon=False,
-                    )
-                proc.start()
-                self.b.listening = True
-                self.b.buff = []
-                self.waiting_for_letter = False
 
             elif key.char == "w":
                 self.notif("writing mode")
                 kwargs["task"] = "write"
-                proc = mp.Process(
-                    target=QuickWhisper,
-                    kwargs=kwargs,
-                    daemon=False,
-                    )
-                proc.start()
-                self.b.listening = True
-                self.b.buff = []
-                self.waiting_for_letter = False
 
             elif key.char == "t":
                 self.notif("transform_clipboard mode")
                 kwargs["task"] = "transform_clipboard"
-                proc = mp.Process(
-                    target=QuickWhisper,
-                    kwargs=kwargs,
-                    daemon=False,
-                    )
-                proc.start()
-                self.b.listening = True
-                self.b.buff = []
-                self.waiting_for_letter = False
 
             else:
                 self.notif(f"Unexpected key pressed: {key}")
                 raise ValueError(key)
+            proc = mp.Process(
+                target=QuickWhisper,
+                kwargs=kwargs,
+                daemon=False,
+                )
+            proc.start()
+            self.b.listening = True
+            self.b.buff = []
+            self.waiting_for_letter = False
         else:
             self.b.buff = []
             self.log(f"Pressed: {key}")
