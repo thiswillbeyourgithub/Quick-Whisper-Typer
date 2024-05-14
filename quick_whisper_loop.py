@@ -22,7 +22,7 @@ class Loop:
         self,
         shift_number: int = 4,
         purge_time: int = 4,
-        verbose: bool = True,
+        verbose: bool = False,
 
         sound_cleanup=None,
         whisper_lang=None,
@@ -41,7 +41,7 @@ class Loop:
             every that much time, the number of shift counted will be reset
             (rolling window)
 
-        verbose: bool, default True
+        verbose: bool, default False
 
         for all other arguments see:
             see quick_whisper_typer.py --help
