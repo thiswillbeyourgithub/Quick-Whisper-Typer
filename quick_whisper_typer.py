@@ -550,12 +550,16 @@ def importer(import_list: List[str]) -> None:
     """
     global playsound, notification, tempfile, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI
     for import_str in import_list:
+        if DEBUG_IMPORT:
+            print(f"Importing: '{import_str}'")
         try:
             exec(import_str, globals())
         except Exception as err:
             raise Exception(f"Error when importing module '{import_str}': {err}'")
         if DEBUG_IMPORT:
-            print(f"THREAD: {import_str}")
+            print(f"Importer: {import_str}")
+    if DEBUG_IMPORT:
+        print("Done importing.")
 
 
 if __name__ == "__main__":
