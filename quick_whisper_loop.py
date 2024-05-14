@@ -98,6 +98,8 @@ class Loop:
             if key.char not in ["w", "n", "c", "t"]:
                 self.notif(f"Key pressed not part of task letter: W(rite), N(ewvoice), C(ontinue voice), T(ransform_clipboard): {key.char}")
                 self.b.waiting_for_letter = False
+                self.b.buff = []
+                return
 
             kwargs = {
                 "voice_engine": self.voice_engine,
