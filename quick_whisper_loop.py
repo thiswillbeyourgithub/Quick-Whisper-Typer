@@ -20,8 +20,8 @@ class Loop:
 
     def __init__(
         self,
-        shift_number: int = 5,
-        purge_time: int = 5,
+        shift_number: int = 4,
+        purge_time: int = 4,
         verbose: bool = True,
 
         sound_cleanup=None,
@@ -34,10 +34,10 @@ class Loop:
         """
         Parameters
         ----------
-        shift_number: int, default 5
+        shift_number: int, default 4
             number of  times you have to press shift for the loop to trigger
 
-        purge_time: int, default 5
+        purge_time: int, default 4
             every that much time, the number of shift counted will be reset
             (rolling window)
 
