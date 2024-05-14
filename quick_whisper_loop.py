@@ -95,6 +95,9 @@ class Loop:
 
 
         elif self.waiting_for_letter:
+            if not hasattr(key, "char"):
+                continue
+
             if key.char not in ["w", "n", "c", "t"]:
                 self.notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
                 self.b.waiting_for_letter = False
