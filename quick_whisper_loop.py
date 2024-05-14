@@ -88,7 +88,7 @@ class Loop:
 
             if len(self.b.buff) >= self.shift_number:
                 self.waiting_for_letter = True
-                self.notif("Waiting for task letter W(rite), N(ewvoice), C(ontinue voice), T(ransform_clipboard)")
+                self.notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
 
             # remove if too old
             self.b.buff = [t for t in self.b.buff if time.time() - t <= self.purge_time]
@@ -96,7 +96,7 @@ class Loop:
 
         elif self.waiting_for_letter:
             if key.char not in ["w", "n", "c", "t"]:
-                self.notif(f"Key pressed not part of task letter: W(rite), N(ewvoice), C(ontinue voice), T(ransform_clipboard): {key.char}")
+                self.notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
                 self.b.waiting_for_letter = False
                 self.b.buff = []
                 return
