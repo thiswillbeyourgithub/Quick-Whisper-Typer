@@ -49,7 +49,7 @@ class QuickWhisper:
     def __init__(
         self,
         task: str = None,
-        llm_model: str = "openai/gpt-3.5-turbo-0125",
+        llm_model: str = "openai/gpt-4o",
         auto_paste: bool = False,
         sound_cleanup: bool = False,
         whisper_prompt: str = None,
@@ -66,7 +66,7 @@ class QuickWhisper:
         task
             transform_clipboard, write, voice_chat
 
-        llm_model: str, default "openai/gpt-3.5-turbo-0125"
+        llm_model: str, default "openai/gpt-4o
             language model to use for the task except if task==write
 
         auto_paste, default False
