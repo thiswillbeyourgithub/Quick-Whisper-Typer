@@ -560,7 +560,7 @@ if __name__ != "__main__":
     from plyer import notification as notification
     import tempfile
     import subprocess
-    #import PySimpleGUI as sg
+    import PySimpleGUI as sg
     from pynput import keyboard
     import os
     import torchaudio
