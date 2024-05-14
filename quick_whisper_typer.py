@@ -59,6 +59,7 @@ class QuickWhisper:
         LLM_instruction: str = None,
         gui: bool = False,
         verbose: bool = True,
+        called_from_loop: bool = False,
     ):
         """
         Parameters
@@ -103,6 +104,9 @@ class QuickWhisper:
             if False, no window is used and you have to press shift to stop the recording.
 
         verbose: bool, default True
+
+        called_from_loop: bool, default False
+            set to True if called by quick_whisper_loop.py
         """
         self.verbose = verbose
         if verbose:
@@ -168,8 +172,12 @@ class QuickWhisper:
                 elif voice_engine == "openai":
                     to_import.append("from openai import OpenAI")
 
-        self.import_thread = threading.Thread(target=importer, args=(to_import,))
-        self.import_thread.start()
+        self.called_from_loop = called_from_loop
+        if not called_from_loop:
+            self.import_thread = threading.Thread(target=importer, args=(to_import,))
+            self.import_thread.start()
+        else:
+            importer(to_import)
 
         self.log(f"Will use prompt {whisper_prompt} and task {task}")
 
@@ -520,16 +528,18 @@ class QuickWhisper:
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
         "sleep while the module is not imported by importer"
-        # cnt = 0
+        if self.called_from_loop:
+            return
+        cnt = 0
         start = time.time()
         while time.time() - start < timeout:
             if module in globals():
                 return
-            # elif cnt % 10 == 0:
-            #     print(f"WAITING FOR {module}")
             assert self.import_thread.is_alive(), "Importer thread is not running, it encountered an error"
             time.sleep(0.001)
-            # cnt += 1
+            cnt += 1
+            if self.verbose and cnt % 10 == 0:
+                print(f"WAITING FOR {module}")
         raise Exception(f"Module not imported in time: {module}")
 
 

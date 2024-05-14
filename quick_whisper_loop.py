@@ -1,7 +1,6 @@
 import os
 from plyer import notification
 import fire
-import multiprocess as mp
 import time
 from pynput import keyboard
 
@@ -115,7 +114,8 @@ class Loop:
                 "whisper_lang": self.whisper_lang,
                 "piper_model_path": self.piper_model_path,
                 "gui": self.gui,
-                    }
+                "called_from_loop": True,
+            }
             if key.char == "n":
                 self.notif("Started voice chat")
                 kwargs["task"] = "new_voice_chat"
@@ -135,12 +135,8 @@ class Loop:
             else:
                 self.notif(f"Unexpected key pressed: {key}")
                 raise ValueError(key)
-            proc = mp.Process(
-                target=QuickWhisper,
-                kwargs=kwargs,
-                daemon=False,
-                )
-            proc.start()
+
+            QuickWhisper(**kwargs)
             self.b.listening = True
             self.b.buff = []
             self.waiting_for_letter = False
