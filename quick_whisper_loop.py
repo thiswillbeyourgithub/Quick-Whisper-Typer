@@ -114,7 +114,6 @@ class Loop:
                 "whisper_lang": self.whisper_lang,
                 "piper_model_path": self.piper_model_path,
                 "gui": self.gui,
-                "called_from_loop": True,
             }
             if key.char == "n":
                 self.notif("Started voice chat")

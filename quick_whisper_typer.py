@@ -59,7 +59,6 @@ class QuickWhisper:
         LLM_instruction: str = None,
         gui: bool = False,
         verbose: bool = True,
-        called_from_loop: bool = False,
     ):
         """
         Parameters
@@ -104,9 +103,6 @@ class QuickWhisper:
             if False, no window is used and you have to press shift to stop the recording.
 
         verbose: bool, default True
-
-        called_from_loop: bool, default False
-            set to True if called by quick_whisper_loop.py
         """
         self.verbose = verbose
         if verbose:
@@ -172,16 +168,12 @@ class QuickWhisper:
                 elif voice_engine == "openai":
                     to_import.append("from openai import OpenAI")
 
-        self.called_from_loop = called_from_loop
-        if not called_from_loop:
+        if __name__ == "__main__":
             self.import_thread = threading.Thread(target=importer, args=(to_import,))
             self.import_thread.start()
-        else:
-            importer(to_import)
 
         self.log(f"Will use prompt {whisper_prompt} and task {task}")
 
-        print("tempfile" in globals())
         self.wait_for_module("tempfile")
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
@@ -436,7 +428,10 @@ class QuickWhisper:
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             if voice_engine == "piper":
                 self.wait_for_module("wave")
-                self.wait_for_module("voice")
+                if __name__ == "__main__":
+                    self.wait_for_module("voice")
+                else:
+                    voice = piper.load(piper_model_path)
                 try:
                     self.log(f"Synthesizing speech to {vocal_file_mp3}")
                     with wave.open(vocal_file_mp3, "wb") as wav_file:
@@ -528,14 +523,14 @@ class QuickWhisper:
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
         "sleep while the module is not imported by importer"
-        if self.called_from_loop:
+        if __name__ != "__main__":
             return
         cnt = 0
         start = time.time()
         while time.time() - start < timeout:
             if module in globals():
                 return
-            assert self.import_thread.is_alive(), "Importer thread is not running, it encountered an error"
+            assert any(t.is_alive() for t in self.import_thread), "Importer thread not running, it encountered an error"
             time.sleep(0.001)
             cnt += 1
             if self.verbose and cnt % 10 == 0:
@@ -556,13 +551,28 @@ def importer(import_list: List[str]) -> None:
             exec(import_str, globals())
         except Exception as err:
             raise Exception(f"Error when importing module '{import_str}': {err}'")
-        if DEBUG_IMPORT:
-            print(f"Importer: {import_str}")
     if DEBUG_IMPORT:
-        print("Done importing.")
+        print("Done importing all packages.")
 
 
-if __name__ == "__main__":
+if __name__ != "__main__":
+    from playsound import playsound as playsound
+    from plyer import notification as notification
+    import tempfile
+    import subprocess
+    #import PySimpleGUI as sg
+    from pynput import keyboard
+    import os
+    import torchaudio
+    import soundfile as sf
+    from litellm import completion, transcription
+    import json
+    import pyclip
+    from piper.voice import PiperVoice as piper
+    import wave
+    from openai import OpenAI
+
+else:
     import fire
     args, kwargs = fire.Fire(lambda *args, **kwargs: [args, kwargs])
     if args:
