@@ -1,3 +1,4 @@
+import os
 from plyer import notification
 import fire
 import multiprocess as mp
@@ -168,6 +169,7 @@ class Loop:
                 self.waiting_for_letter = False
 
             else:
+                self.notif(f"Unexpected key pressed: {key}")
                 raise ValueError(key)
         else:
             self.b.buff = []
@@ -193,7 +195,6 @@ if __name__ == "__main__":
     try:
         Loop(**kwargs)
     except Exception as err:
-        import os
         os.system("killall rec")
-        notification.notify(title="Quick Whisper (Loop)", message=f"Error in loop: '{err}'", timeout=-1)
+        Loop.notif(essage=f"Error in loop: '{err}'", timeout=-1)
         raise
