@@ -569,15 +569,14 @@ class QuickWhisper:
 
 
         elif self.waiting_for_letter:
+            self.key_buff = []
+            self.waiting_for_letter = False
+
             if not hasattr(key, "char"):
-                self.waiting_for_letter = False
-                self.key_buff = []
                 return
 
             if key.char not in ["w", "n", "c", "t"]:
                 self._notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
-                self.waiting_for_letter = False
-                self.key_buff = []
                 return
 
             if key.char == "n":
@@ -600,8 +599,7 @@ class QuickWhisper:
                 self._notif(f"Unexpected key pressed: {key}")
                 return
             self.main(task=task)
-            self.key_buff = []
-            self.waiting_for_letter = False
+
         else:
             self.key_buff = []
             self.log(f"Pressed: {key}")
