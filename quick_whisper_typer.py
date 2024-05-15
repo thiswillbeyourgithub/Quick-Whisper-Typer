@@ -482,10 +482,7 @@ class QuickWhisper:
             voice_engine = self.voice_engine
             if voice_engine == "piper":
                 self.wait_for_module("wave")
-                if __name__ == "__main__":
-                    self.wait_for_module("voice")
-                else:
-                    voice = piper.load(self.piper_model_path)
+                self.wait_for_module("voice")
                 try:
                     self.log(f"Synthesizing speech to {vocal_file_mp3}")
                     with wave.open(vocal_file_mp3, "wb") as wav_file:
