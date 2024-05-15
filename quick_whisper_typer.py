@@ -600,10 +600,10 @@ class QuickWhisper:
             self.key_buff = []
             self.log(f"Pressed: {key}")
 
-    @classmethod
-    def log(self, message: str) -> str:
+    def log(self, message: str, do_print: bool=False) -> str:
         "add string to the log"
-        print(message)
+        if self.verbose or do_print:
+            print(message)
         with open("texts.log", "a") as f:
             f.write(f"{int(time.time())} {message}\n")
         return message
