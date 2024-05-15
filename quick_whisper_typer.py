@@ -176,48 +176,49 @@ class QuickWhisper:
         if loop:
                 assert not task, "If using loop, you must leave task to None"
 
+        # to reduce startup time, use threaded module import
+        to_import = [
+            "from playsound import playsound as playsound",
+            "from plyer import notification as notification",
+            "import tempfile",
+            "import subprocess"
+        ]
+        if gui:
+            to_import.append("import PySimpleGUI as sg")
+        else:
+            to_import.append("from pynput import keyboard")
+        to_import.append("import os")
+        if sound_cleanup:
+            to_import.append("import torchaudio")
+            to_import.append("import soundfile as sf")
+        to_import.append("from litellm import completion, transcription")
+        if loop or task == "write":
+            to_import.append("import json")
+        if loop or task == "write" or task == "transform_clipboard":
+            to_import.append("import pyclip")
+        if loop or "voice" in task:
+            if voice_engine:
+                if voice_engine == "piper":
+                    to_import.append("from piper.voice import PiperVoice as piper")
+                    to_import.append("import wave")
+                    if piper_model_path:
+                        to_import.append(f"voice = piper.load('{piper_model_path}')")
+                elif voice_engine == "openai":
+                    to_import.append("from openai import OpenAI")
+
+        self.import_thread = threading.Thread(target=importer, args=(to_import,))
+        self.import_thread.start()
+
         if loop:
             # the module were imported already
             self.loop_shift_nb = loop_shift_nb
             self.loop_time_window = loop_time_window
             self.waiting_for_letter = False
             self.key_buff = []
+            self.wait_for_module("keyboard")
             self.key = keyboard.Key.shift
             self.loop()
-
-        else:  # or to reduce startup time, use threaded module import
-            to_import = [
-                "from playsound import playsound as playsound",
-                "from plyer import notification as notification",
-                "import tempfile",
-                "import subprocess"
-            ]
-            if gui:
-                to_import.append("import PySimpleGUI as sg")
-            else:
-                to_import.append("from pynput import keyboard")
-            to_import.append("import os")
-            if sound_cleanup:
-                to_import.append("import torchaudio")
-                to_import.append("import soundfile as sf")
-            to_import.append("from litellm import completion, transcription")
-            if task == "write":
-                to_import.append("import json")
-            if task == "write" or task == "transform_clipboard":
-                to_import.append("import pyclip")
-            if "voice" in task:
-                if voice_engine:
-                    if voice_engine == "piper":
-                        to_import.append("from piper.voice import PiperVoice as piper")
-                        to_import.append("import wave")
-                        if piper_model_path:
-                            to_import.append(f"voice = piper.load('{piper_model_path}')")
-                    elif voice_engine == "openai":
-                        to_import.append("from openai import OpenAI")
-
-            self.import_thread = threading.Thread(target=importer, args=(to_import,))
-            self.import_thread.start()
-
+        else:
             self.main(
                 task=task,
             )
@@ -674,8 +675,6 @@ class QuickWhisper:
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
         "sleep while the module is not imported by importer"
-        if __name__ != "__main__":
-            return
         cnt = 0
         start = time.time()
         while time.time() - start < timeout:
