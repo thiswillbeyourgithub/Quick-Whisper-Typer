@@ -143,6 +143,7 @@ class QuickWhisper:
         self.disable_notifications = disable_notifications
         self.disable_bells = disable_bells
         self.disable_voice = False  # toggle via loop
+        self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
 
         if verbose:
             global DEBUG_IMPORT
@@ -217,7 +218,6 @@ class QuickWhisper:
             self.waiting_for_letter = False
             self.key_buff = []
             self.wait_for_module("keyboard")
-            self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
             self.loop()
         else:
             self.main(
@@ -257,9 +257,10 @@ class QuickWhisper:
             whisper_prompt = self.whisper_prompt
             LLM_instruction = self.LLM_instruction
             self.wait_for_module("keyboard")
+            keys = self.keys
             def released_shift(key):
                 "detect when shift is pressed"
-                if key == keyboard.Key.shift:
+                if key in keys:
                     self.log("Pressed shift.")
                     time.sleep(1)
                     return False
