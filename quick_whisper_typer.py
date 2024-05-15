@@ -63,7 +63,7 @@ class QuickWhisper:
         loop: bool = False,
         loop_shift_nb: int = 4,
         loop_time_window: int = 4,
-        verbose: bool = True,
+        verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
     ):
@@ -121,7 +121,7 @@ class QuickWhisper:
             every that much time, the number of shift counted will be reset
             (rolling window)
 
-        verbose: bool, default True
+        verbose: bool, default False
 
         disable_bells: bool, default False
             disable sound feedback
