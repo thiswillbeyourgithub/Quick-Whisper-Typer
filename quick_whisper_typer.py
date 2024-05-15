@@ -607,15 +607,14 @@ class QuickWhisper:
             f.write(f"{int(time.time())} {message}\n")
         return message
 
-    def notif(self, message: str) -> str:
+    def notif(self, message: str, timeout: int = 5) -> str:
         "notification to the computer"
         if self.disable_notifications:
             self.log(f"Notif: '{message}'")
             return message
-        self._notif(message)
+        self._notif(message, timeout)
 
-    @classmethod
-    def _notif(self, message: str, timeout=5) -> str:
+    def _notif(self, message: str, timeout: int = 5) -> str:
         self.log(f"Notif: '{message}'")
         notification.notify(title="Quick Whisper", message=message, timeout=timeout)
 
@@ -738,6 +737,6 @@ if __name__ == "__main__":
         import os
         os.system("killall rec")
         from plyer import notification
-        QuickWhisper._notif(f"Error: {err}")
+        notification.notify(title="Quick Whisper", message=f"Error: {err}", timeout=-1)
         raise
     raise SystemExit("Done")
