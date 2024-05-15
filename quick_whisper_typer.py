@@ -564,7 +564,7 @@ class QuickWhisper:
                 if time.time() - t <= self.loop_time_window
             ]
 
-            if len(self.key_buff) >= self.loop_shift_nb:
+            if len(self.key_buff) == self.loop_shift_nb:
                 self.waiting_for_letter = True
                 self._notif("Waiting for task letter:\nw(rite)\nn(ew voice chat)\nc(ontinue voice chat)\nt(ransform_clipboard)\n\nSettings:\nS(toggle voice)", -1)
 
