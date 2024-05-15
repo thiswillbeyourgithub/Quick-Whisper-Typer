@@ -530,7 +530,7 @@ class QuickWhisper:
         while time.time() - start < timeout:
             if module in globals():
                 return
-            assert any(t.is_alive() for t in self.import_thread), "Importer thread not running, it encountered an error"
+            assert self.import_thread.is_alive(), "Importer thread not running, it encountered an error"
             time.sleep(0.001)
             cnt += 1
             if self.verbose and cnt % 10 == 0:
