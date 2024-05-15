@@ -603,7 +603,7 @@ class QuickWhisper:
                     self.disable_voice = False
                     self._notif("Enabling voice")
                 else:
-                    self.disable_voice = True:
+                    self.disable_voice = True
                     self._notif("Disabling voice")
                 return
 

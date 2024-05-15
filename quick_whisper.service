@@ -5,7 +5,7 @@ After=network.target
 # you need screen installed otherwise we can't grab the keyboard apparently
 [Service]
 ExecStartPre=/usr/bin/screen -S quickwhisperscreen -X quit -wipe || true
-ExecStart=/usr/bin/screen -dmS quickwhisperscreen -wipe [YOUR PYTHON3] quick_whisper_typer.py --loop # add your other args here
+ExecStart=/usr/bin/screen -dmS quickwhisperscreen [YOUR PYTHON3] quick_whisper_typer.py --loop # add your other args here
 ExecSop=/usr/bin/screen -S quickwhisperscreen -X quit -wipe || true
 
 Restart=always
