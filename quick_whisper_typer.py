@@ -514,9 +514,14 @@ class QuickWhisper:
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
-                subprocess.run(
-                    ["espeak", "-v", self.whisper_lang, "-p", "20", "-s", "110", "-z", answer]
-                )
+                if self.whisper_lang:
+                    subprocess.run(
+                        ["espeak", "-v", self.whisper_lang, "-p", "20", "-s", "110", "-z", answer]
+                    )
+                else:
+                    subprocess.run(
+                        ["espeak", "-p", "20", "-s", "110", "-z", answer]
+                    )
 
             if voice_engine is None:
                 self.log("voice_engine is None: not speaking.")
