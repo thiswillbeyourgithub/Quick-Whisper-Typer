@@ -487,6 +487,7 @@ class QuickWhisper:
                     self.log(f"Synthesizing speech to {vocal_file_mp3}")
                     with wave.open(vocal_file_mp3, "wb") as wav_file:
                         answer = answer.replace("!", ".")
+                        answer = answer.replace(". ", ".\n")
                         voice.synthesize(answer, wav_file)
 
                     self.log(f"Playing voice file: {vocal_file_mp3}")
