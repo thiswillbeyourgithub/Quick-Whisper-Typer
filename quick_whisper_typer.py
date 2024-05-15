@@ -142,6 +142,7 @@ class QuickWhisper:
         self.whisper_prompt = whisper_prompt
         self.disable_notifications = disable_notifications
         self.disable_bells = disable_bells
+        self.disable_voice = False  # toggle via loop
 
         if verbose:
             global DEBUG_IMPORT
@@ -479,7 +480,7 @@ class QuickWhisper:
             self.notif(answer, -1)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
-            voice_engine = self.voice_engine
+            voice_engine = self.voice_engine if not self.disable_voice else None
             if voice_engine == "piper":
                 self.wait_for_module("wave")
                 self.wait_for_module("voice")
@@ -565,7 +566,7 @@ class QuickWhisper:
 
             if len(self.key_buff) >= self.loop_shift_nb:
                 self.waiting_for_letter = True
-                self._notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)", -1)
+                self._notif("Waiting for task letter:\nw(rite)\nn(ew voice chat)\nc(ontinue voice chat)\nt(ransform_clipboard)\n\nSettings:\nS(toggle voice)", -1)
 
 
         elif self.waiting_for_letter:
@@ -575,8 +576,8 @@ class QuickWhisper:
             if not hasattr(key, "char"):
                 return
 
-            if key.char not in ["w", "n", "c", "t"]:
-                self._notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
+            if key.char not in ["w", "n", "c", "t", "s"]:
+                self._notif(f"Unexpected key: '{key.char}'")
                 return
 
             if key.char == "n":
@@ -594,6 +595,17 @@ class QuickWhisper:
             elif key.char == "t":
                 self._notif("transform_clipboard mode")
                 task = "transform_clipboard"
+
+            elif key.char == "s":
+                if not self.voice_engine:
+                    self._notif("Can't toggle voice if voice_engine was never set")
+                elif self.disable_voice:
+                    self.disable_voice = False
+                    self._notif("Enabling voice")
+                else:
+                    self.disable_voice = True:
+                    self._notif("Disabling voice")
+                return
 
             else:
                 self._notif(f"Unexpected key pressed: {key}")
