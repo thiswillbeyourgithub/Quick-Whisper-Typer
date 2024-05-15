@@ -711,9 +711,11 @@ if __name__ == "__main__":
     args, kwargs = fire.Fire(lambda *args, **kwargs: [args, kwargs])
     if args:
         raise Exception(f"Non keyword args are not supported: {args}")
+
     if "help" in kwargs:
         print(help(QuickWhisper))
         raise SystemExit()
+
     if "loop" in kwargs and kwargs["loop"]:
         from playsound import playsound as playsound
         from plyer import notification as notification
@@ -732,7 +734,7 @@ if __name__ == "__main__":
         from openai import OpenAI
 
     try:
-        qw = QuickWhisper(**kwargs)
+        QuickWhisper(**kwargs)
     except Exception as err:
         import os
         os.system("killall rec")
