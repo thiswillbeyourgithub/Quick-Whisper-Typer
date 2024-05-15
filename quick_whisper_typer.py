@@ -216,7 +216,7 @@ class QuickWhisper:
             self.waiting_for_letter = False
             self.key_buff = []
             self.wait_for_module("keyboard")
-            self.key = keyboard.Key.shift
+            self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
             self.loop()
         else:
             self.main(
@@ -548,7 +548,7 @@ class QuickWhisper:
 
     def on_release(self, key):
         "triggered when a key is released"
-        if key == self.key:
+        if key in self.keys:
             self.log("Released shift")
             self.log(f"Shift counter: {len(self.key_buff)}")
 
