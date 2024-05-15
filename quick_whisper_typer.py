@@ -127,7 +127,7 @@ class QuickWhisper:
             disable sound feedback
 
         disable_notifications: bool, default False
-            disable notifications
+            disable notifications, except for the loop trigger
         """
         # store arguments
         self.verbose = verbose
@@ -553,7 +553,7 @@ class QuickWhisper:
 
             if len(self.key_buff) >= self.loop_shift_nb:
                 self.waiting_for_letter = True
-                self.notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
+                self._notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
 
             # remove if too old
             self.key_buff = [t for t in self.key_buff if time.time() - t <= self.loop_time_window]
@@ -566,29 +566,29 @@ class QuickWhisper:
                 return
 
             if key.char not in ["w", "n", "c", "t"]:
-                self.notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
+                self._notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
                 self.waiting_for_letter = False
                 self.key_buff = []
                 return
 
             if key.char == "n":
-                self.notif("Started voice chat")
+                self._notif("Started voice chat")
                 task = "new_voice_chat"
 
             elif key.char == "c":
-                self.notif("Continuing voice chat")
+                self._notif("Continuing voice chat")
                 task = "continue_voice_chat"
 
             elif key.char == "w":
-                self.notif("writing mode")
+                self._notif("writing mode")
                 task = "write"
 
             elif key.char == "t":
-                self.notif("transform_clipboard mode")
+                self._notif("transform_clipboard mode")
                 task = "transform_clipboard"
 
             else:
-                self.notif(f"Unexpected key pressed: {key}")
+                self._notif(f"Unexpected key pressed: {key}")
                 raise ValueError(key)
 
             self.main(task=task)
@@ -609,11 +609,13 @@ class QuickWhisper:
     def notif(self, message: str) -> str:
         "notification to the computer"
         if self.disable_notifications:
+            self.log(f"Notif: '{message}'")
             return message
         self._notif(message)
 
     @classmethod
     def _notif(self, message: str) -> str:
+        self.log(f"Notif: '{message}'")
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
     def playsound(self, name: str) -> None:
