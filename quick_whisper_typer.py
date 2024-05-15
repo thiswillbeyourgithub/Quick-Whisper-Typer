@@ -129,22 +129,6 @@ class QuickWhisper:
         disable_notifications: bool, default False
             disable notifications, except for the loop trigger
         """
-        # store arguments
-        self.verbose = verbose
-        self.gui = gui
-        self.llm_model = llm_model
-        self.voice_engine = voice_engine
-        self.piper_model_path = piper_model_path
-        self.auto_paste = auto_paste
-        self.sound_cleanup = sound_cleanup
-        self.LLM_instruction = LLM_instruction
-        self.whisper_lang = whisper_lang
-        self.whisper_prompt = whisper_prompt
-        self.disable_notifications = disable_notifications
-        self.disable_bells = disable_bells
-        self.disable_voice = False  # toggle via loop
-        self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
-
         if verbose:
             global DEBUG_IMPORT
             DEBUG_IMPORT = True
@@ -211,6 +195,24 @@ class QuickWhisper:
         self.import_thread = threading.Thread(target=importer, args=(to_import,))
         self.import_thread.start()
 
+        # store arguments
+        self.verbose = verbose
+        self.gui = gui
+        self.llm_model = llm_model
+        self.voice_engine = voice_engine
+        self.piper_model_path = piper_model_path
+        self.auto_paste = auto_paste
+        self.sound_cleanup = sound_cleanup
+        self.LLM_instruction = LLM_instruction
+        self.whisper_lang = whisper_lang
+        self.whisper_prompt = whisper_prompt
+        self.disable_notifications = disable_notifications
+        self.disable_bells = disable_bells
+        self.disable_voice = False  # toggle via loop
+
+        self.wait_for_module("keyboard")
+        self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
+
         if loop:
             # the module were imported already
             self.loop_shift_nb = loop_shift_nb
@@ -256,7 +258,6 @@ class QuickWhisper:
         else:
             whisper_prompt = self.whisper_prompt
             LLM_instruction = self.LLM_instruction
-            self.wait_for_module("keyboard")
             keys = self.keys
             def released_shift(key):
                 "detect when shift is pressed"
