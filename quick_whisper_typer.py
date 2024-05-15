@@ -543,8 +543,6 @@ class QuickWhisper:
         listener.start()  # non blocking
         self.notif("Loop started.")
         listener.join()
-        while True:
-            pass
 
     def on_release(self, key):
         "triggered when a key is released"
