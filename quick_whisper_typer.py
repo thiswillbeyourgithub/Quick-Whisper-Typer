@@ -539,12 +539,14 @@ class QuickWhisper:
 
     def loop(self):
         "run continuously, waiting for shift to be pressed enough times"
-        listener = keyboard.Listener(
-            on_release=self.on_release,
-        )
-        listener.start()  # non blocking
-        self.notif("Loop started.")
-        listener.join()
+        while True:
+            listener = keyboard.Listener(
+                on_release=self.on_release,
+            )
+            listener.start()  # non blocking
+
+            self.notif("Loop started.")
+            listener.join()
 
     def on_release(self, key):
         "triggered when a key is released"
@@ -596,8 +598,7 @@ class QuickWhisper:
 
             else:
                 self._notif(f"Unexpected key pressed: {key}")
-                raise ValueError(key)
-
+                return
             self.main(task=task)
             self.key_buff = []
             self.waiting_for_letter = False
