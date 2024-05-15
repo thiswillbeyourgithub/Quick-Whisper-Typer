@@ -39,7 +39,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * Low latency: it starts as fast as possible to be ready to listen to you
 * Multiple voice_engine: openai, [piper](https://github.com/rhasspy/piper), espeak (fallback if any of the other two fails)
 * Optional audio cleanup and long silence removal via sox
-* `quick_whisper_loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
+* `loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
 * Support virtually any type of LLM (ChatGPT, Claude, Huggingface, Llama, etc) thanks to [litellm](https://docs.litellm.ai/).
 
 ## How to
