@@ -420,7 +420,7 @@ class QuickWhisper:
 
             self.log("Pasting clipboard")
             pyclip.copy(answer)
-            self.notif(answer)
+            self.notif(answer, -1)
             if self.auto_paste:
                 os.system("xdotool key ctrl+v")
                 pyclip.copy(clipboard)
@@ -475,7 +475,7 @@ class QuickWhisper:
             LLM_response = completion(model=self.llm_model, messages=messages)
             answer = LLM_response.json()["choices"][0]["message"]["content"]
             self.log(f'LLM answer to the chat: "{answer}"')
-            self.notif(answer)
+            self.notif(answer, -1)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
             voice_engine = self.voice_engine
@@ -553,7 +553,7 @@ class QuickWhisper:
 
             if len(self.key_buff) >= self.loop_shift_nb:
                 self.waiting_for_letter = True
-                self._notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
+                self._notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)", -1)
 
             # remove if too old
             self.key_buff = [t for t in self.key_buff if time.time() - t <= self.loop_time_window]
@@ -614,9 +614,9 @@ class QuickWhisper:
         self._notif(message)
 
     @classmethod
-    def _notif(self, message: str) -> str:
+    def _notif(self, message: str, timeout=5) -> str:
         self.log(f"Notif: '{message}'")
-        notification.notify(title="Quick Whisper", message=message, timeout=-1)
+        notification.notify(title="Quick Whisper", message=message, timeout=timeout)
 
     def playsound(self, name: str) -> None:
         "create a thread to play sounds without blocking the main code"
