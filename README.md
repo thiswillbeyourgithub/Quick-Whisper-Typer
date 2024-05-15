@@ -30,7 +30,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * I want to translate text: copy the text in to the clipboard then `python quick_whisper_typer.py --task=transform_clipboard --auto_paste`
 * I want to start a vocal conversation: `python quick_whisper_typer.py --task="new_voice_chat" --voice_engine='openai'`
 * I want to continue the conversation: `python quick_whisper_typer.py --task="continue_voice_chat" --voice_engine='openai'`
-* I want to be able to call it without setting up keybindings: `python loop.py` then press shift 5 times in any screen to call quick_whisper_typer.
+* I want to call it from anywhere without setting up keybindings, use `--loop` then press `shift` key several times from anywhere and you'll see a notification appear to trigger the tasks.
 
 
 ## Features
@@ -39,7 +39,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * Low latency: it starts as fast as possible to be ready to listen to you
 * Multiple voice_engine: openai, [piper](https://github.com/rhasspy/piper), espeak (fallback if any of the other two fails)
 * Optional audio cleanup and long silence removal via sox
-* `loop.py` can be used to trigger the vocal script from any screen just by pressing shift multiple times.
+* `--loop` to trigger the script from anywhere just by pressing shift multiple times.
 * Support virtually any type of LLM (ChatGPT, Claude, Huggingface, Llama, etc) thanks to [litellm](https://docs.litellm.ai/).
 
 ## How to
