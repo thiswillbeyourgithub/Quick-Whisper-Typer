@@ -114,7 +114,7 @@ class QuickWhisper:
             if True, will run an endless loop. If you press the shift key
             loop_shift_nb times you can call quick_whisper from anywhere.
 
-        loop_shift_number: int, default 4
+        loop_shift_nb: int, default 4
             number of  times you have to press shift for the loop to trigger
 
         loop_time_window: int, default 4
