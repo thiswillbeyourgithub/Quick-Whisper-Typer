@@ -17,8 +17,8 @@ class Loop:
 
     def __init__(
         self,
-        shift_number: int = 4,
-        purge_time: int = 4,
+        loop_shift_nb: int = 4,
+        loop_time_window: int = 4,
         verbose: bool = False,
 
         sound_cleanup=None,
@@ -31,10 +31,10 @@ class Loop:
         """
         Parameters
         ----------
-        shift_number: int, default 4
+        loop_shift_nb: int, default 4
             number of  times you have to press shift for the loop to trigger
 
-        purge_time: int, default 4
+        loop_time_window: int, default 4
             every that much time, the number of shift counted will be reset
             (rolling window)
 
@@ -44,8 +44,8 @@ class Loop:
             see quick_whisper_typer.py --help
 
         """
-        self.shift_number = shift_number
-        self.purge_time = purge_time
+        self.loop_shift_nb = loop_shift_nb
+        self.loop_time_window = loop_time_window
         self.verbose = verbose
         self.voice_engine = voice_engine
         self.auto_paste = auto_paste
@@ -83,12 +83,12 @@ class Loop:
 
             self.buff.append(time.time())
 
-            if len(self.buff) >= self.shift_number:
+            if len(self.buff) >= self.loop_shift_nb:
                 self.waiting_for_letter = True
                 self.notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
 
             # remove if too old
-            self.buff = [t for t in self.buff if time.time() - t <= self.purge_time]
+            self.buff = [t for t in self.buff if time.time() - t <= self.loop_time_window]
 
 
         elif self.waiting_for_letter:
