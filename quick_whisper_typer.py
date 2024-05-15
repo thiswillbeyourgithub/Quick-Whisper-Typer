@@ -61,8 +61,8 @@ class QuickWhisper:
         LLM_instruction: str = None,
         gui: bool = False,
         loop: bool = False,
-        loop_shift_nb: int = 4,
-        loop_time_window: int = 4,
+        loop_shift_nb: int = 3,
+        loop_time_window: int = 2,
         verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
@@ -114,10 +114,10 @@ class QuickWhisper:
             if True, will run an endless loop. If you press the shift key
             loop_shift_nb times you can call quick_whisper from anywhere.
 
-        loop_shift_nb: int, default 4
+        loop_shift_nb: int, default 3
             number of  times you have to press shift for the loop to trigger
 
-        loop_time_window: int, default 4
+        loop_time_window: int, default 2
             every that much time, the number of shift counted will be reset
             (rolling window)
 
