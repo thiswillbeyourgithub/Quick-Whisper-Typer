@@ -750,10 +750,10 @@ if __name__ == "__main__":
 
     try:
         QuickWhisper(**kwargs)
+        raise SystemExit("Done")
     except Exception as err:
         import os
         os.system("killall rec")
         from plyer import notification
         notification.notify(title="Quick Whisper", message=f"Error: {err}", timeout=-1)
         raise
-    raise SystemExit("Done")
