@@ -554,12 +554,16 @@ class QuickWhisper:
 
             self.key_buff.append(time.time())
 
+            # remove if too old
+            self.key_buff = [
+                t
+                for t in self.key_buff
+                if time.time() - t <= self.loop_time_window
+            ]
+
             if len(self.key_buff) >= self.loop_shift_nb:
                 self.waiting_for_letter = True
                 self._notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)", -1)
-
-            # remove if too old
-            self.key_buff = [t for t in self.key_buff if time.time() - t <= self.loop_time_window]
 
 
         elif self.waiting_for_letter:
