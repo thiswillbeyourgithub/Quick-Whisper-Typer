@@ -10,13 +10,10 @@ from quick_whisper_typer import QuickWhisper
 
 shift = keyboard.Key.shift
 
-class Buffer:
+class Loop:
     buff = []
     started = 0
     listening = False
-
-class Loop:
-    b = Buffer()
 
     def __init__(
         self,
@@ -71,39 +68,39 @@ class Loop:
 
     def on_press(self, key):
         if key == shift:
-            self.b.started = time.time()
+            self.started = time.time()
             # self.log("Pressed shift")
 
     def on_release(self, key):
         if key == shift:
             self.log("Released shift")
-            if self.b.listening:
+            if self.listening:
                 self.log("Stopped the quickwhisper process")
-                self.b.listening = False
+                self.listening = False
                 return
 
-            self.log(f"Shift counter: {len(self.b.buff)}")
+            self.log(f"Shift counter: {len(self.buff)}")
 
-            self.b.buff.append(time.time())
+            self.buff.append(time.time())
 
-            if len(self.b.buff) >= self.shift_number:
+            if len(self.buff) >= self.shift_number:
                 self.waiting_for_letter = True
                 self.notif("Waiting for task letter w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard)")
 
             # remove if too old
-            self.b.buff = [t for t in self.b.buff if time.time() - t <= self.purge_time]
+            self.buff = [t for t in self.buff if time.time() - t <= self.purge_time]
 
 
         elif self.waiting_for_letter:
             if not hasattr(key, "char"):
-                self.b.waiting_for_letter = False
-                self.b.buff = []
+                self.waiting_for_letter = False
+                self.buff = []
                 return
 
             if key.char not in ["w", "n", "c", "t"]:
                 self.notif(f"Key pressed not part of task letter: w(rite), n(ewvoice), c(ontinue voice), t(ransform_clipboard): {key.char}")
-                self.b.waiting_for_letter = False
-                self.b.buff = []
+                self.waiting_for_letter = False
+                self.buff = []
                 return
 
             kwargs = {
@@ -136,11 +133,11 @@ class Loop:
                 raise ValueError(key)
 
             QuickWhisper(**kwargs)
-            self.b.listening = True
-            self.b.buff = []
+            self.listening = True
+            self.buff = []
             self.waiting_for_letter = False
         else:
-            self.b.buff = []
+            self.buff = []
             self.log(f"Pressed: {key}")
 
     @classmethod
