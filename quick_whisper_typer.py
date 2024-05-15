@@ -60,6 +60,8 @@ class QuickWhisper:
         LLM_instruction: str = None,
         gui: bool = False,
         verbose: bool = True,
+        disable_bells: bool = False,
+        disable_notifications: bool = False,
     ):
         """
         Parameters
@@ -104,8 +106,16 @@ class QuickWhisper:
             if False, no window is used and you have to press shift to stop the recording.
 
         verbose: bool, default True
+
+        disable_bells: bool, default False
+            disable sound feedback
+
+        disable_notifications: bool, default False
+            disable notifications
         """
         self.verbose = verbose
+        self.disable_notifications = disable_notifications
+        self.disable_bells = disable_bells
         if verbose:
             global DEBUG_IMPORT
             DEBUG_IMPORT = True
@@ -489,9 +499,13 @@ class QuickWhisper:
 
     @classmethod
     def notif(self, message: str) -> str:
+        if self.disable_notifications:
+            return message
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
     def playsound(self, name: str) -> None:
+        if self.disable_bells:
+            return
         if hasattr(self, "sound_queue"):
             self.sound_queue.put(name)
         else:
