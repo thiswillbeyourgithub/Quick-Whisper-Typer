@@ -1,5 +1,6 @@
 from typing import List
 import threading
+import queue
 from pathlib import Path
 import time
 
@@ -491,8 +492,24 @@ class QuickWhisper:
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
     def playsound(self, name: str) -> None:
-        self.sound_thread = threading.Thread(target=playsound, args=(name,))
-        self.sound_thread.start()
+        if hasattr(self, "sound_queue"):
+            self.sound_queue.put(name)
+        else:
+            def sound_thread(qin:queue.Queue) -> None:
+                global playsound
+                while True:
+                    name = qin.get()
+                    if not name:
+                        return  # kill thread
+                    playsound(name)
+            self.sound_queue = queue.Queue()
+            self.sound_thread = threading.Thread(
+                target=sound_thread,
+                args=(self.sound_queue,),
+                daemon=False,
+            )
+            self.sound_thread.start()
+            self.sound_queue.put(name)
 
     def gui(self, prompt: str, task: str) -> str:
         title = "Sound Recorder"
