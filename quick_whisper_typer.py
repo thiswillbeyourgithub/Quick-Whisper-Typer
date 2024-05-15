@@ -496,11 +496,13 @@ class QuickWhisper:
             f.write(f"{int(time.time())} {message}\n")
         return message
 
-
-    @classmethod
     def notif(self, message: str) -> str:
         if self.disable_notifications:
             return message
+        self._notif(message)
+
+    @classmethod
+    def _notif(self, message: str) -> str:
         notification.notify(title="Quick Whisper", message=message, timeout=-1)
 
     def playsound(self, name: str) -> None:
@@ -620,5 +622,5 @@ else:
         import os
         os.system("killall rec")
         from plyer import notification
-        QuickWhisper.notif(f"Error: {err}")
+        QuickWhisper._notif(f"Error: {err}")
         raise
