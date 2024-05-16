@@ -3,6 +3,7 @@ import threading
 import queue
 from pathlib import Path
 import time
+import platform
 
 DEBUG_IMPORT = False
 
@@ -133,6 +134,7 @@ class QuickWhisper:
         disable_notifications: bool, default False
             disable notifications, except for the loop trigger
         """
+        self.os_type = platform.system()
         if verbose:
             global DEBUG_IMPORT
             DEBUG_IMPORT = True
@@ -165,6 +167,8 @@ class QuickWhisper:
         ), f"Invalid task {task} not part of {self.allowed_tasks}"
         if loop:
                 assert not task, "If using loop, you must leave task to None"
+        if auto_paste and self.os_type != "Linux":
+            raise Exception(f"Can't use --auto_paste if not on linux. Detected OS: {self.os_type}")
 
         # to reduce startup time, use threaded module import
         to_import = [
