@@ -559,6 +559,8 @@ class QuickWhisper:
 
                 self.notif("Loop started.")
                 listener.join()
+            except KeyboardInterrupt:
+                self.log("Quitting.", True)
             except Exception as err:
                 failed += 1
                 self._notif(f"Error #{failed} in loop: '{err}'")
