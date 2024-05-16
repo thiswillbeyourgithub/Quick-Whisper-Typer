@@ -53,6 +53,7 @@ class QuickWhisper:
         task: str = None,
         llm_model: str = "openai/gpt-4o",
         auto_paste: bool = False,
+        restore_clipboard: bool = False,
         sound_cleanup: bool = False,
         whisper_prompt: str = None,
         whisper_lang: str = None,
@@ -78,8 +79,11 @@ class QuickWhisper:
             language model to use for the task except if task==write
 
         auto_paste, default False
-            if True, will use xdotool to paste directly. Otherwise just plays
-            a sound to tell you that the clipboard was filled.
+            if True, will use xdotool to paste directly.
+
+        restore_clipboard: bool, default False
+            wether to automatically restore your previous clipboard if
+            auto_paste is used.
 
         sound_cleanup: bool, default False
             Clean up the sound before sending it to whisper, but this adds
@@ -202,6 +206,7 @@ class QuickWhisper:
         self.voice_engine = voice_engine
         self.piper_model_path = piper_model_path
         self.auto_paste = auto_paste
+        self.restore_clipboard = restore_clipboard
         self.sound_cleanup = sound_cleanup
         self.LLM_instruction = LLM_instruction
         self.whisper_lang = whisper_lang
@@ -377,8 +382,9 @@ class QuickWhisper:
             pyclip.copy(text)
             if self.auto_paste:
                 os.system("xdotool key ctrl+v")
-                pyclip.copy(clipboard)
-                self.log("Clipboard reset")
+                if self.restore_clipboard:
+                    pyclip.copy(clipboard)
+                    self.log("Clipboard restored")
 
             self.notif("Done")
             playsound("sounds/Positive.ogg", block=False)
@@ -427,8 +433,9 @@ class QuickWhisper:
             self.notif(answer, -1)
             if self.auto_paste:
                 os.system("xdotool key ctrl+v")
-                pyclip.copy(clipboard)
-                self.log("Clipboard reset")
+                if self.restore_clipboard:
+                    pyclip.copy(clipboard)
+                    self.log("Clipboard restored")
 
             playsound("sounds/Positive.ogg", block=False)
 
