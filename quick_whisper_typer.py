@@ -542,14 +542,20 @@ class QuickWhisper:
 
     def loop(self):
         "run continuously, waiting for shift to be pressed enough times"
-        while True:
-            listener = keyboard.Listener(
-                on_release=self.on_release,
-            )
-            listener.start()  # non blocking
+        failed = 0
+        while failed <= 3:
+            try:
+                listener = keyboard.Listener(
+                    on_release=self.on_release,
+                )
+                listener.start()  # non blocking
 
-            self.notif("Loop started.")
-            listener.join()
+                self.notif("Loop started.")
+                listener.join()
+            except Exception as err:
+                failed += 1
+                self._notif(f"Error #{failed} in loop: '{err}'")
+        raise Exception(f"{failed} errors in loop: crashing")
 
     def on_release(self, key):
         "triggered when a key is released"
