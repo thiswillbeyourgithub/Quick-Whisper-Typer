@@ -247,7 +247,7 @@ class QuickWhisper:
         # Start recording
         start_time = time.time()
         self.log(f"Recording {file}")
-        if self.os == "Linux":
+        if os_type == "Linux":
             # Kill any previously running recordings
             self.wait_for_module("subprocess")
             subprocess.run(
