@@ -7,6 +7,7 @@ import platform
 
 DEBUG_IMPORT = False
 
+os_type = platform.system()
 
 class QuickWhisper:
     system_prompts = {
@@ -134,7 +135,6 @@ class QuickWhisper:
         disable_notifications: bool, default False
             disable notifications, except for the loop trigger
         """
-        self.os_type = platform.system()
         if verbose:
             global DEBUG_IMPORT
             DEBUG_IMPORT = True
@@ -170,11 +170,14 @@ class QuickWhisper:
 
         # to reduce startup time, use threaded module import
         to_import = [
-            "from playsound import playsound as playsound",
-            "from plyer import notification as notification",
+            "from playsound import playsound",
+            "from plyer import notification",
             "import tempfile",
-            "import subprocess"
         ]
+        if os_type == "Linux":
+            to_import.append("import subprocess")
+        else:
+            to_import.append("from plyer import audio_recorder")
         if gui:
             to_import.append("import PySimpleGUI as sg")
         else:
@@ -241,17 +244,24 @@ class QuickWhisper:
         file = tempfile.NamedTemporaryFile(suffix=".mp3").name
         min_duration = 2  # if the recording is shorter, exit
 
-        # Kill any previously running recordings
-        start_time = time.time()
-        self.wait_for_module("subprocess")
-        subprocess.run(
-            ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-
         # Start recording
+        start_time = time.time()
         self.log(f"Recording {file}")
-        subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
-
+        if self.os == "Linux":
+            # Kill any previously running recordings
+            self.wait_for_module("subprocess")
+            subprocess.run(
+                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
+        else:
+            self.wait_for_module("audio_recorder")
+            audio_recorder.start(
+                file_path=file,
+                channels=1,
+                sample_rate=44100,
+                bit_rate=128000,
+            )
         self.notif("Listening")
         self.wait_for_module("playsound")
         playsound("sounds/Slick.ogg", block=False)
@@ -288,9 +298,12 @@ class QuickWhisper:
                 listener.join()  # blocking
 
         # Kill the recording
-        subprocess.run(
-            ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
+        if os_type == "Linux":
+            subprocess.run(
+                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        else:
+            audio_recorder.stop()
         end_time = time.time()
         self.log(f"Done recording {file}")
         playsound("sounds/Rhodes.ogg", block=False)
@@ -384,7 +397,7 @@ class QuickWhisper:
             pyclip.copy(text)
             if self.auto_paste:
                 cont = keyboard.Controller()
-                modifier = keyboard.Key.ctrl if self.os_type != "Darwin" else keyboard.Key.cmd
+                modifier = keyboard.Key.ctrl if os_type != "Darwin" else keyboard.Key.cmd
                 with cont.pressed(modifier):
                     cont.press("v")
                     cont.release("v")
@@ -439,7 +452,7 @@ class QuickWhisper:
             self.notif(answer, -1)
             if self.auto_paste:
                 cont = keyboard.Controller()
-                modifier = keyboard.Key.ctrl if self.os_type != "Darwin" else keyboard.Key.cmd
+                modifier = keyboard.Key.ctrl if os_type != "Darwin" else keyboard.Key.cmd
                 with cont.pressed(modifier):
                     cont.press("v")
                     cont.release("v")
@@ -699,9 +712,10 @@ class QuickWhisper:
             return whisper_prompt, LLM_instruction
         else:
             self.log("Pressed cancel or escape. Exiting.")
-            subprocess.run(
-                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
+            if os_type == "Linux":
+                subprocess.run(
+                    ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
             raise SystemExit()
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
@@ -750,7 +764,10 @@ if __name__ == "__main__":
         from playsound import playsound as playsound
         from plyer import notification as notification
         import tempfile
-        import subprocess
+        if os_type == "Linux":
+            import subprocess
+        else:
+            from plyer import notification as audio_recorder
         import PySimpleGUI as sg
         from pynput import keyboard
         import os
