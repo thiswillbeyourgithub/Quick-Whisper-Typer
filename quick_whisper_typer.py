@@ -647,25 +647,47 @@ class QuickWhisper:
         "create a thread to play sounds without blocking the main code"
         if self.disable_bells:
             return
-        if hasattr(self, "sound_queue"):
-            self.sound_queue.put(name)
+        if hasattr(self, "sound_thread"):
+            if self.check_sound():
+                self.sound_queue_in.put(name)
+            else:
+                self._notif("Reseting sound thread")
+                delattr(self, "sound_queue_in")
+                delattr(self, "sound_queue_out")
+                delattr(self, "sound_thread")
+                return self.playsound(name)
         else:
-            def sound_thread(qin:queue.Queue) -> None:
+            def sound_thread(qin:queue.Queue, qout: queue.Queue) -> None:
                 "play sound when receiving a path from the queue"
                 global playsound
                 while True:
                     name = qin.get()
                     if not name:
                         return  # kill thread
-                    playsound(name)
-            self.sound_queue = queue.Queue()
+                    try:
+                        playsound(name)
+                    except Exception as err:
+                        qout.put(str(err) + f" ({name})")
+            self.sound_queue_in = queue.Queue()
+            self.sound_queue_out = queue.Queue()
             self.sound_thread = threading.Thread(
                 target=sound_thread,
-                args=(self.sound_queue,),
+                args=(self.sound_queue_in, self.sound_queue_out),
                 daemon=False,
             )
             self.sound_thread.start()
-            self.sound_queue.put(name)
+            self.sound_queue_in.put(name)
+
+    def check_sound(self):
+        try:
+            out = self.sound_queue_out.get_nowait()
+        except queue.Empty:
+            out = None
+        if out:
+            self._notif(f"Error when playing last sound: {out}")
+            return False
+        else:
+            return True
 
     def gui(self, prompt: str, task: str) -> str:
         "create a popup to manually enter a prompt"
