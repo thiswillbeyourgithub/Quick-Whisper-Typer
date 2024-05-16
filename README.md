@@ -24,7 +24,6 @@ Super simple python script to start recording sound, send it to whisper then hav
 4. the transcription will be interpreted as the first user message in a conversation with `--llm_model`
 5. the result will either be pasted or stored in the clipboard like for `--task=write`, and optionaly read aloud if `--voice_engine` is set
 6. To continue the conversation, use the task `--task=continue_voice_chat`
-7. If you're on linux with systemd and would to have that always be running, use the file `quick_whisper.service`.
 
 # Examples
 * I want to write text: `python quick_whisper_typer.py --task=write --auto_paste`
