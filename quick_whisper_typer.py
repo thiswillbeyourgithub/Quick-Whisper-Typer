@@ -247,7 +247,7 @@ class QuickWhisper:
 
         self.notif("Listening")
         self.wait_for_module("playsound")
-        self.playsound("sounds/Slick.ogg")
+        playsound("sounds/Slick.ogg", block=False)
 
         if self.gui is True:
             # Show recording form
@@ -286,7 +286,7 @@ class QuickWhisper:
         )
         end_time = time.time()
         self.log(f"Done recording {file}")
-        self.playsound("sounds/Rhodes.ogg")
+        playsound("sounds/Rhodes.ogg", block=False)
         if self.gui is False:
             self.notif("Analysing")
 
@@ -381,7 +381,7 @@ class QuickWhisper:
                 self.log("Clipboard reset")
 
             self.notif("Done")
-            self.playsound("sounds/Positive.ogg")
+            playsound("sounds/Positive.ogg", block=False)
 
         elif task == "transform_clipboard":
             self.log(
@@ -430,7 +430,7 @@ class QuickWhisper:
                 pyclip.copy(clipboard)
                 self.log("Clipboard reset")
 
-            self.playsound("sounds/Positive.ogg")
+            playsound("sounds/Positive.ogg", block=False)
 
         elif "voice_chat" in task:
             if "new" in task:
@@ -494,7 +494,7 @@ class QuickWhisper:
                         voice.synthesize(answer, wav_file)
 
                     self.log(f"Playing voice file: {vocal_file_mp3}")
-                    self.playsound(vocal_file_mp3)
+                    playsound(vocal_file_mp3, block=False)
                 except Exception as err:
                     self.notif(
                         self.log(f"Error with piper, trying with espeak: '{err}'"))
@@ -512,7 +512,7 @@ class QuickWhisper:
                         speed=1,
                     )
                     response.stream_to_file(vocal_file_mp3)
-                    self.playsound(vocal_file_mp3)
+                    playsound(vocal_file_mp3, block=False)
                 except Exception as err:
                     self.notif(
                         self.log(f"Error with openai voice_engine, trying with espeak: '{err}'"))
@@ -642,41 +642,6 @@ class QuickWhisper:
     def _notif(self, message: str, timeout: int = 5) -> str:
         self.log(f"Notif: '{message}'")
         notification.notify(title="Quick Whisper", message=message, timeout=timeout)
-
-    def playsound(self, name: str) -> None:
-        "create a thread to play sounds without blocking the main code"
-        if self.disable_bells:
-            return
-        if hasattr(self, "sound_thread"):
-            if self.check_sound():
-                self.sound_queue_in.put(name)
-            else:
-                self._notif("Reseting sound thread")
-                delattr(self, "sound_queue_in")
-                delattr(self, "sound_queue_out")
-                delattr(self, "sound_thread")
-                return self.playsound(name)
-        else:
-            def sound_thread(qin:queue.Queue, qout: queue.Queue) -> None:
-                "play sound when receiving a path from the queue"
-                global playsound
-                while True:
-                    name = qin.get()
-                    if not name:
-                        return  # kill thread
-                    try:
-                        playsound(name)
-                    except Exception as err:
-                        qout.put(str(err) + f" ({name})")
-            self.sound_queue_in = queue.Queue()
-            self.sound_queue_out = queue.Queue()
-            self.sound_thread = threading.Thread(
-                target=sound_thread,
-                args=(self.sound_queue_in, self.sound_queue_out),
-                daemon=False,
-            )
-            self.sound_thread.start()
-            self.sound_queue_in.put(name)
 
     def check_sound(self):
         try:
