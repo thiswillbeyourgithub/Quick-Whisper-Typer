@@ -80,7 +80,7 @@ class QuickWhisper:
             language model to use for the task except if task==write
 
         auto_paste, default False
-            if True, will use xdotool to paste directly.
+            if True, will trigger ctrl+v to paste directly.
 
         restore_clipboard: bool, default False
             wether to automatically restore your previous clipboard if
@@ -167,8 +167,6 @@ class QuickWhisper:
         ), f"Invalid task {task} not part of {self.allowed_tasks}"
         if loop:
                 assert not task, "If using loop, you must leave task to None"
-        if auto_paste and self.os_type != "Linux":
-            raise Exception(f"Can't use --auto_paste if not on linux. Detected OS: {self.os_type}")
 
         # to reduce startup time, use threaded module import
         to_import = [
@@ -385,7 +383,11 @@ class QuickWhisper:
             self.log("Pasting clipboard")
             pyclip.copy(text)
             if self.auto_paste:
-                os.system("xdotool key ctrl+v")
+                cont = keyboard.Controller()
+                modifier = keyboard.Key.ctrl if self.os_type != "Darwin" else keyboard.Key.cmd
+                with cont.pressed(modifier):
+                    cont.press("v")
+                    cont.release("v")
                 if self.restore_clipboard:
                     pyclip.copy(clipboard)
                     self.log("Clipboard restored")
@@ -436,7 +438,11 @@ class QuickWhisper:
             pyclip.copy(answer)
             self.notif(answer, -1)
             if self.auto_paste:
-                os.system("xdotool key ctrl+v")
+                cont = keyboard.Controller()
+                modifier = keyboard.Key.ctrl if self.os_type != "Darwin" else keyboard.Key.cmd
+                with cont.pressed(modifier):
+                    cont.press("v")
+                    cont.release("v")
                 if self.restore_clipboard:
                     pyclip.copy(clipboard)
                     self.log("Clipboard restored")
