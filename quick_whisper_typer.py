@@ -509,7 +509,7 @@ class QuickWhisper:
                         voice="echo",
                         input=answer,
                         response_format="mp3",
-                        speed=1,
+                        speed=1.3,
                     )
                     response.stream_to_file(vocal_file_mp3)
                     playsound(vocal_file_mp3, block=False)
