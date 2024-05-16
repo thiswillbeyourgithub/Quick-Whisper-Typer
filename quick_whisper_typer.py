@@ -561,6 +561,7 @@ class QuickWhisper:
                 listener.join()
             except KeyboardInterrupt:
                 self.log("Quitting.", True)
+                raise SystemExit()
             except Exception as err:
                 failed += 1
                 self._notif(f"Error #{failed} in loop: '{err}'")
