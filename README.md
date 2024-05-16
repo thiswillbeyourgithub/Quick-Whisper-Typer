@@ -41,6 +41,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * Optional audio cleanup and long silence removal via sox
 * `--loop` to trigger the script from anywhere just by pressing shift multiple times.
 * Support virtually any type of LLM (ChatGPT, Claude, Huggingface, Llama, etc) thanks to [litellm](https://docs.litellm.ai/).
+* Supposedly multiplatform, but I can't test it on anything else than Linux so please open an issue to tell me how it went!
 
 ## How to
 * Put your OpenAI api key in a file called OPENAI_API_KEY.txt.
