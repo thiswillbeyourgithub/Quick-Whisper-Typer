@@ -278,9 +278,9 @@ class QuickWhisper:
         self.wait_for_module("playsound")
         playsound("sounds/Slick.ogg", block=False)
 
-        if self.gui is True:
+        if gui is True:
             # Show recording form
-            whisper_prompt, LLM_instruction = self.gui(
+            whisper_prompt, LLM_instruction = self.launch_gui(
                 self.whisper_prompt,
                 task,
                 )
@@ -689,7 +689,7 @@ class QuickWhisper:
         else:
             return True
 
-    def gui(self, prompt: str, task: str) -> str:
+    def launch_gui(self, prompt: str, task: str) -> str:
         "create a popup to manually enter a prompt"
         title = "Sound Recorder"
 
