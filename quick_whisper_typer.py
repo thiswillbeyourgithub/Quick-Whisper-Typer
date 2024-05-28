@@ -66,7 +66,7 @@ class QuickWhisper:
         loop: bool = False,
         loop_shift_nb: int = 3,
         loop_time_window: int = 2,
-        loop_tasks: dict = {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "toggle voice"}},
+        loop_tasks: dict = {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "disable_voice"}},
         verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
@@ -128,11 +128,11 @@ class QuickWhisper:
             every that much time, the number of shift counted will be reset
             (rolling window)
 
-        loop_tasks: dict, default {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "toggle voice"}},
+        loop_tasks: dict, default {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "disable_voice"}},
             A dict that defines what task to trigger when the loop is triggered
             each key must be a single letter
             each value must be a dict with arguments
-            An extra key is always present: s to silence the voice
+            You always have to specify a "task" key/val except to toggle the voice via {"extra_args": "disable_voice"}
 
         verbose: bool, default False
 
@@ -246,10 +246,56 @@ class QuickWhisper:
         else:
             self.main(
                 task=task,
+                auto_paste=auto_paste,
+                gui=gui,
+                whisper_prompt=whisper_prompt,
+                whisper_lang=whisper_lang,
+                LLM_instruction=LLM_instruction,
+                sound_cleanup=sound_cleanup,
+                llm_model=llm_model,
+                voice_engine=voice_engine,
+                disable_voice=self.disable_voice,
+                restore_clipboard=restore_clipboard,
             )
 
-    def main(self, task):
+    def main(
+        self,
+        task: str,
+        auto_paste: bool = None,
+        gui: bool = None,
+        whisper_prompt: str = None,
+        whisper_lang: str = None,
+        LLM_instruction: str = None,
+        sound_cleanup: bool = None,
+        llm_model: str = None,
+        voice_engine: str = None,
+        disable_voice: bool = None,
+        restore_clipboard: bool = None,
+        ):
         "execcuted by self.loop or at the end of __init__"
+
+        # set the main args to the launch value if not set by the loop
+        if auto_paste is None and self.auto_paste:
+            auto_paste = self.auto_paste
+        if gui is None and self.gui:
+            gui = self.gui
+        if whisper_prompt is None and self.whisper_prompt:
+            whisper_prompt = self.whisper_prompt
+        if whisper_lang is None and self.whisper_lang:
+            whisper_lang = self.whisper_lang
+        if LLM_instruction is None and self.LLM_instruction:
+            LLM_instruction = self.LLM_instruction
+        if sound_cleanup is None and self.sound_cleanup:
+            sound_cleanup = self.sound_cleanup
+        if llm_model is None and self.llm_model:
+            llm_model = self.llm_model
+        if voice_engine is None and self.voice_engine:
+            voice_engine = self.voice_engine
+        if disable_voice is None and self.disable_voice:
+            disable_voice = self.disable_voice
+        if restore_clipboard is None and self.restore_clipboard:
+            restore_clipboard = self.restore_clipboard
+
         self.log(f"Will use prompt {self.whisper_prompt} and task {task}")
 
         self.wait_for_module("tempfile")
@@ -281,12 +327,10 @@ class QuickWhisper:
         if gui is True:
             # Show recording form
             whisper_prompt, LLM_instruction = self.launch_gui(
-                self.whisper_prompt,
+                whisper_prompt,
                 task,
                 )
         else:
-            whisper_prompt = self.whisper_prompt
-            LLM_instruction = self.LLM_instruction
             keys = self.keys
             def released_shift(key):
                 "detect when shift is pressed"
@@ -319,7 +363,7 @@ class QuickWhisper:
         end_time = time.time()
         self.log(f"Done recording {file}")
         playsound("sounds/Rhodes.ogg", block=False)
-        if self.gui is False:
+        if gui is False:
             self.notif("Analysing")
 
         # Check duration
@@ -333,7 +377,7 @@ class QuickWhisper:
             )
             raise SystemExit()
 
-        if self.sound_cleanup:
+        if sound_cleanup:
             # clean up the sound
             self.log("Cleaning up sound")
 
@@ -344,7 +388,7 @@ class QuickWhisper:
                 waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
                     waveform,
                     sample_rate,
-                    self.sox_cleanup,
+                    sox_cleanup,
                 )
                 file2 = file.replace(".mp3", "") + "_clean.wav"
                 sf.write(str(file2), waveform.numpy().T,
@@ -361,7 +405,7 @@ class QuickWhisper:
             transcript_response = transcription(
                 model="whisper-1",
                 file=f,
-                language=self.whisper_lang,
+                language=whisper_lang,
                 prompt=whisper_prompt,
                 temperature=0,
                 max_retries=0,
@@ -379,7 +423,7 @@ class QuickWhisper:
 
             if LLM_instruction:
                 self.log(
-                    f"Calling {self.llm_model} to transfrom the transcript to follow "
+                    f"Calling {llm_model} to transfrom the transcript to follow "
                     f"those instructions: {LLM_instruction}"
                 )
                 messages=[
@@ -397,7 +441,7 @@ class QuickWhisper:
 
                 self.wait_for_module("completion")
                 LLM_response = completion(
-                    model=self.llm_model,
+                    model=llm_model,
                     messages=messages,
                 )
                 answer = LLM_response.json(
@@ -407,13 +451,13 @@ class QuickWhisper:
 
             self.log("Pasting clipboard")
             pyclip.copy(text)
-            if self.auto_paste:
+            if auto_paste:
                 cont = keyboard.Controller()
                 modifier = keyboard.Key.ctrl if os_type != "Darwin" else keyboard.Key.cmd
                 with cont.pressed(modifier):
                     cont.press("v")
                     cont.release("v")
-                if self.restore_clipboard:
+                if restore_clipboard:
                     pyclip.copy(clipboard)
                     self.log("Clipboard restored")
 
@@ -444,7 +488,7 @@ class QuickWhisper:
             assert len(text) < 10000, f"Suspiciously large text content: {len(text)}"
             self.wait_for_module("completion")
             LLM_response = completion(
-                model=self.llm_model,
+                model=llm_model,
                 messages=[
                     {
                         "role": "system",
@@ -462,13 +506,13 @@ class QuickWhisper:
             self.log("Pasting clipboard")
             pyclip.copy(answer)
             self.notif(answer, -1)
-            if self.auto_paste:
+            if auto_paste:
                 cont = keyboard.Controller()
                 modifier = keyboard.Key.ctrl if os_type != "Darwin" else keyboard.Key.cmd
                 with cont.pressed(modifier):
                     cont.press("v")
                     cont.release("v")
-                if self.restore_clipboard:
+                if restore_clipboard:
                     pyclip.copy(clipboard)
                     self.log("Clipboard restored")
 
@@ -518,13 +562,13 @@ class QuickWhisper:
 
             self.log(f"Calling LLM with messages: '{messages}'")
             self.wait_for_module("completion")
-            LLM_response = completion(model=self.llm_model, messages=messages)
+            LLM_response = completion(model=llm_model, messages=messages)
             answer = LLM_response.json()["choices"][0]["message"]["content"]
             self.log(f'LLM answer to the chat: "{answer}"')
             self.notif(answer, -1)
 
             vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
-            voice_engine = self.voice_engine if not self.disable_voice else None
+            voice_engine = voice_engine if not disable_voice else None
             if voice_engine == "piper":
                 self.wait_for_module("wave")
                 self.wait_for_module("voice")
@@ -561,9 +605,9 @@ class QuickWhisper:
                     voice_engine = "espeak"
 
             if voice_engine == "espeak":
-                if self.whisper_lang:
+                if whisper_lang:
                     subprocess.run(
-                        ["espeak", "-v", self.whisper_lang, "-p", "20", "-s", "110", "-z", answer]
+                        ["espeak", "-v", whisper_lang, "-p", "20", "-s", "110", "-z", answer]
                     )
                 else:
                     subprocess.run(
@@ -641,8 +685,7 @@ class QuickWhisper:
                 message += "{k}: {v}\n"
             self._notif(f"Started loop with arg:\n{message.strip()}")
 
-            elif key.char == "s":
-            if "extra_args" in main_args and main_args["extra_args"] == "toggle voice":
+            if "extra_args" in main_args and main_args["extra_args"] == "disable_voice":
                 if not self.voice_engine:
                     self._notif("Can't toggle voice if voice_engine was never set")
                 elif self.disable_voice:
@@ -651,6 +694,10 @@ class QuickWhisper:
                 else:
                     self.disable_voice = True
                     self._notif("Disabling voice")
+                return
+
+            if "task" not in main_args and main_args["task"] in self.allowed_tasks:
+                self._notif(f"Invalid task in '{main_args}'")
                 return
 
             self.main(**main_args)
