@@ -61,6 +61,7 @@ class QuickWhisper:
         whisper_lang: str = None,
         voice_engine: str = None,
         piper_model_path: str = None,
+        disable_voice: bool = False,
         LLM_instruction: str = None,
         gui: bool = False,
         loop: bool = False,
@@ -107,6 +108,10 @@ class QuickWhisper:
             For example 'en_US-lessac-medium'. Make sure you have 
             a .onxx and .json file present.
             More info: https://github.com/rhasspy/piper
+
+        disable_voice: bool, default False
+            This flag disables the voice_engine. It can be used to toggle on
+            or off the voice_engine in the loop.
 
         LLM_instruction: str, default None
             if given, then the transcript will be given to an LLM and tasked
@@ -225,7 +230,7 @@ class QuickWhisper:
         self.whisper_prompt = whisper_prompt
         self.disable_notifications = disable_notifications
         self.disable_bells = disable_bells
-        self.disable_voice = False  # toggle via loop
+        self.disable_voice = disable_voice
 
         self.wait_for_module("keyboard")
         self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
@@ -254,7 +259,7 @@ class QuickWhisper:
                 sound_cleanup=sound_cleanup,
                 llm_model=llm_model,
                 voice_engine=voice_engine,
-                disable_voice=self.disable_voice,
+                disable_voice=disable_voice,
                 restore_clipboard=restore_clipboard,
             )
 
