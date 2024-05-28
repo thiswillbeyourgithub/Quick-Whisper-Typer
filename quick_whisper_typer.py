@@ -693,7 +693,7 @@ class QuickWhisper:
             for k, v in main_args.items():
                 k = str(k)[:10]
                 v = str(v)[:10]
-                message += "{k}: {v}\n"
+                message += f"{k}: {v}\n"
             self._notif(f"Started loop with arg:\n{message.strip()}")
 
             if "extra_args" in main_args and main_args["extra_args"] == "disable_voice":
