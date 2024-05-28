@@ -66,6 +66,7 @@ class QuickWhisper:
         loop: bool = False,
         loop_shift_nb: int = 3,
         loop_time_window: int = 2,
+        loop_tasks: dict = {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "toggle voice"}},
         verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
@@ -126,6 +127,12 @@ class QuickWhisper:
         loop_time_window: int, default 2
             every that much time, the number of shift counted will be reset
             (rolling window)
+
+        loop_tasks: dict, default {"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "toggle voice"}},
+            A dict that defines what task to trigger when the loop is triggered
+            each key must be a single letter
+            each value must be a dict with arguments
+            An extra key is always present: s to silence the voice
 
         verbose: bool, default False
 
@@ -225,6 +232,11 @@ class QuickWhisper:
 
         if loop:
             # the module were imported already
+            assert isinstance(loop_tasks, dict), "loop_tasks must be a dict"
+            assert loop_tasks, "loop_tasks must not be empty"
+            assert all(isinstance(val, dict) for val in loop_tasks.values()), "values of loop_tasks must be dictionnaries"
+            assert all(val for val in loop_tasks.values()), "values of loop_tasks can't be empty"
+            self.loop_tasks = loop_tasks
             self.loop_shift_nb = loop_shift_nb
             self.loop_time_window = loop_time_window
             self.waiting_for_letter = False
@@ -607,7 +619,7 @@ class QuickWhisper:
 
             if len(self.key_buff) == self.loop_shift_nb:
                 self.waiting_for_letter = True
-                self._notif("Waiting for task letter:\nw(rite)\nn(ew voice chat)\nc(ontinue voice chat)\nt(ransform_clipboard)\n\nSettings:\nS(toggle voice)", self.loop_time_window)
+                self._notif(f"Waiting for task letter:\n{','.join(self.loop_tasks.keys())}", self.loop_time_window)
 
 
         elif self.waiting_for_letter:
@@ -617,27 +629,20 @@ class QuickWhisper:
             if not hasattr(key, "char"):
                 return
 
-            if key.char not in ["w", "n", "c", "t", "s"]:
+            if key.char not in self.loop_tasks.keys():
                 self._notif(f"Unexpected key: '{key.char}'")
                 return
 
-            if key.char == "n":
-                self._notif("Started voice chat")
-                task = "new_voice_chat"
-
-            elif key.char == "c":
-                self._notif("Continuing voice chat")
-                task = "continue_voice_chat"
-
-            elif key.char == "w":
-                self._notif("writing mode")
-                task = "write"
-
-            elif key.char == "t":
-                self._notif("transform_clipboard mode")
-                task = "transform_clipboard"
+            main_args = self.loop_tasks[key.char]
+            message = ""
+            for k, v in main_args.items():
+                k = str(k)[:10]
+                v = str(v)[:10]
+                message += "{k}: {v}\n"
+            self._notif(f"Started loop with arg:\n{message.strip()}")
 
             elif key.char == "s":
+            if "extra_args" in main_args and main_args["extra_args"] == "toggle voice":
                 if not self.voice_engine:
                     self._notif("Can't toggle voice if voice_engine was never set")
                 elif self.disable_voice:
@@ -648,10 +653,7 @@ class QuickWhisper:
                     self._notif("Disabling voice")
                 return
 
-            else:
-                self._notif(f"Unexpected key pressed: {key}")
-                return
-            self.main(task=task)
+            self.main(**main_args)
 
         else:
             self.key_buff = []
