@@ -1,9 +1,15 @@
+import uuid
 from typing import List
 import threading
 import queue
 from pathlib import Path
 import time
 import platform
+from platformdirs import user_cache_dir
+
+assert Path(user_cache_dir()).exists(), f"User cache dir not found: '{user_cache_dir()}'"
+cache_dir = Path(user_cache_dir()) / "QuickWhisperTyper"
+cache_dir.mkdir(exist_ok=True)
 
 DEBUG_IMPORT = False
 
@@ -184,7 +190,6 @@ class QuickWhisper:
         to_import = [
             "from playsound import playsound",
             "from plyer import notification",
-            "import tempfile",
         ]
         if os_type == "Linux":
             to_import.append("import subprocess")
@@ -309,8 +314,7 @@ class QuickWhisper:
 
         self.log(f"Will use prompt {self.whisper_prompt} and task {task}")
 
-        self.wait_for_module("tempfile")
-        file = tempfile.NamedTemporaryFile(suffix=".mp3").name
+        file = cache_dir / (str(uuid.uuid4()) + ".mp3")
         min_duration = 2  # if the recording is shorter, exit
 
         # Start recording
@@ -531,7 +535,7 @@ class QuickWhisper:
 
         elif "voice_chat" in task:
             if "new" in task:
-                voice_file = f"/tmp/quick_whisper_chat_{int(time.time())}.txt"
+                voice_file = cache_dir / f"chat_{int(time.time())}.txt"
                 self.log(f"Creating new voice chat file: {voice_file}")
 
                 messages = [
@@ -541,7 +545,7 @@ class QuickWhisper:
             elif "continue" in task:
                 voice_files = [
                     f
-                    for f in Path("/tmp").iterdir()
+                    for f in cache_dir.iterdir()
                     if f.name.startswith("quick_whisper_chat_")
                 ]
                 voice_files = sorted(
@@ -578,7 +582,7 @@ class QuickWhisper:
             self.log(f'LLM answer to the chat: "{answer}"')
             self.notif(answer, -1)
 
-            vocal_file_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3").name
+            vocal_file_mp3 = cache_dir / (str(uuid.uuid4()) + ".mp3")
             voice_engine = voice_engine if not disable_voice else None
             if voice_engine == "piper":
                 self.wait_for_module("wave")
@@ -798,7 +802,7 @@ def importer(import_list: List[str]) -> None:
     multithreading to import module and reduce startup time
     source: https://stackoverflow.com/questions/46698837/can-i-import-modules-from-thread-in-python
     """
-    global playsound, notification, tempfile, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI
+    global playsound, notification, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI
     for import_str in import_list:
         if DEBUG_IMPORT:
             print(f"Importing: '{import_str}'")
@@ -823,7 +827,6 @@ if __name__ == "__main__":
     if "loop" in kwargs and kwargs["loop"]:
         from playsound import playsound as playsound
         from plyer import notification as notification
-        import tempfile
         if os_type == "Linux":
             import subprocess
         else:

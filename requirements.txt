@@ -6,6 +6,8 @@ openai >= 1.14.1
 pynput >= 1.7.6
 plyer >= 2.1.0
 litellm >= 1.32.1
+platformdirs  # for cache folder
+uuid
 
 # used to clean up audio
 torchaudio >= 2.2.0
