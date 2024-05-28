@@ -237,7 +237,13 @@ class QuickWhisper:
 
         if loop:
             # the module were imported already
-            assert isinstance(loop_tasks, dict), "loop_tasks must be a dict"
+            if isinstance(loop_tasks, str):
+                self.wait_for_module("json")
+                try:
+                    loop_tasks = json.loads(loop_tasks)
+                except Exception as err:
+                    raise Exception(f"Error when parsing loop_tasks as a dict: '{err}'")
+            assert isinstance(loop_tasks, dict), f"loop_tasks must be a dict, not {type(loop_tasks)}"
             assert loop_tasks, "loop_tasks must not be empty"
             assert all(isinstance(val, dict) for val in loop_tasks.values()), "values of loop_tasks must be dictionnaries"
             assert all(val for val in loop_tasks.values()), "values of loop_tasks can't be empty"
