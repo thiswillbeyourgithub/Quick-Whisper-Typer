@@ -664,8 +664,8 @@ class QuickWhisper:
     def on_release(self, key):
         "triggered when a key is released"
         if key in self.loop_key_triggers:
-            self.log("Released shift")
-            self.log(f"Shift counter: {len(self.key_buff)}")
+            self.log("Released loop key trigger")
+            self.log(f"Trigger counter: {len(self.key_buff)}")
 
             self.key_buff.append(time.time())
 
