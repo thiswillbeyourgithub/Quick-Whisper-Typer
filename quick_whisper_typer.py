@@ -716,6 +716,7 @@ class QuickWhisper:
                 return False
 
             self.main(**main_args)
+            return False
 
         else:
             self.key_buff = []
