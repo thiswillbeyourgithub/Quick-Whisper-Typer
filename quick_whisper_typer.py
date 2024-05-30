@@ -423,7 +423,7 @@ class QuickWhisper:
                 language=whisper_lang,
                 prompt=whisper_prompt,
                 temperature=0,
-                max_retries=0,
+                max_retries=3,
             )
         text = transcript_response.text
         self.notif(self.log(f"Transcript: {text}"))
@@ -458,6 +458,7 @@ class QuickWhisper:
                 LLM_response = completion(
                     model=llm_model,
                     messages=messages,
+                    num_retries=3,
                 )
                 answer = LLM_response.json(
                 )["choices"][0]["message"]["content"]
