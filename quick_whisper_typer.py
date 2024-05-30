@@ -403,7 +403,7 @@ class QuickWhisper:
                 waveform, sample_rate = torchaudio.sox_effects.apply_effects_tensor(
                     waveform,
                     sample_rate,
-                    sox_cleanup,
+                    self.sox_cleanup,
                 )
                 file2 = file.replace(".mp3", "") + "_clean.wav"
                 sf.write(str(file2), waveform.numpy().T,
