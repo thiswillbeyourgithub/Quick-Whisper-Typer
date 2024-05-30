@@ -238,7 +238,7 @@ class QuickWhisper:
         self.disable_voice = disable_voice
 
         self.wait_for_module("keyboard")
-        self.keys = [keyboard.Key.shift, keyboard.Key.shift_r]
+        self.loop_key_triggers = [keyboard.Key.shift, keyboard.Key.shift_r]
 
         if loop:
             # the module were imported already
@@ -346,7 +346,7 @@ class QuickWhisper:
                 task,
                 )
         else:
-            keys = self.keys
+            keys = self.loop_key_triggers
             def released_shift(key):
                 "detect when shift is pressed"
                 if key in keys:
@@ -663,7 +663,7 @@ class QuickWhisper:
 
     def on_release(self, key):
         "triggered when a key is released"
-        if key in self.keys:
+        if key in self.loop_key_triggers:
             self.log("Released shift")
             self.log(f"Shift counter: {len(self.key_buff)}")
 
