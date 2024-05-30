@@ -686,11 +686,11 @@ class QuickWhisper:
             self.waiting_for_letter = False
 
             if not hasattr(key, "char"):
-                return
+                return False
 
             if key.char not in self.loop_tasks.keys():
                 self._notif(f"Unexpected key: '{key.char}'")
-                return
+                return False
 
             main_args = self.loop_tasks[key.char]
             message = ""
@@ -709,11 +709,11 @@ class QuickWhisper:
                 else:
                     self.disable_voice = True
                     self._notif("Disabling voice")
-                return
+                return False
 
             if "task" not in main_args and main_args["task"] in self.allowed_tasks:
                 self._notif(f"Invalid task in '{main_args}'")
-                return
+                return False
 
             self.main(**main_args)
 
