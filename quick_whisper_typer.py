@@ -375,11 +375,6 @@ class QuickWhisper:
             with keyboard.Listener(on_release=released_shift) as listener:
                 self.log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
 
-                for path in list(Path(".").rglob("./*API_KEY.txt")):
-                    backend = path.name.split("_API_KEY.txt")[0]
-                    content = path.read_text().strip()
-                    os.environ[f"{backend.upper()}_API_KEY"] = content
-
                 listener.join()  # blocking
 
         # Kill the recording

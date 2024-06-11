@@ -45,7 +45,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 * Supposedly multiplatform, but I can't test it on anything else than Linux so please open an issue to tell me how it went!
 
 ## How to
-* Put your OpenAI api key in a file called OPENAI_API_KEY.txt.
+* Make sure you set openai (or deepgram) api key as environnment variables as OPENAI_API_KEY (or DEEPGRAM_API_KEY)
 * *optional: add a keyboard shortcut to call this script. See my i3 bindings below.*
 * If using deepgram: make sure you are on python 3.10+
 * `chmod +x ./quick_whisper_typer.py`
