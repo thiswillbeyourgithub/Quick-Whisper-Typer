@@ -145,6 +145,7 @@ class QuickWhisper:
             A dict that defines what task to trigger when the loop is triggered
             each key must be a single letter
             each value must be a dict with arguments
+            if a value of the arguments is a filepath, it will be replaced by the file's content (useful to add long prompts)
             You always have to specify a "task" key/val except to toggle the voice via {"extra_args": "disable_voice"}
 
         verbose: bool, default False
@@ -266,6 +267,13 @@ class QuickWhisper:
             assert loop_tasks, "loop_tasks must not be empty"
             assert all(isinstance(val, dict) for val in loop_tasks.values()), "values of loop_tasks must be dictionnaries"
             assert all(val for val in loop_tasks.values()), "values of loop_tasks can't be empty"
+
+            # replace any path in values by its content
+            for k, v in loop_tasks.items():
+                for kk, vv in v.items():
+                    if Path(vv).exists():
+                        loop_tasks[k][kk] = Path(vv).read_text()
+
             self.loop_tasks = loop_tasks
             self.loop_shift_nb = loop_shift_nb
             self.loop_time_window = loop_time_window
