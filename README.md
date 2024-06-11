@@ -1,7 +1,7 @@
 # Quick Whisper Typer
 Super simple python script to start recording sound, send it to whisper then have it type for you anywhere.
 * Can also modify text according to voice commands.
-* Latency is as low as I could (<1s before starting to speak).
+* Latency is as low as I could (instant if deepgram is used, <1s for openai's whisper).
 * It can be seen as a minimalist alternative to [AquaVoice](https://withaqua.com/)
 
 ## The way each task works
@@ -35,6 +35,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 
 ## Features
 * Supports any spoken languages supported by whisper
+* Supports both openai's whisper and [deepgram's whisper](deepgram.com)
 * Minimalist code
 * Low latency: it starts as fast as possible to be ready to listen to you
 * Multiple voice_engine: openai, [piper](https://github.com/rhasspy/piper), espeak (fallback if any of the other two fails)
@@ -46,6 +47,7 @@ Super simple python script to start recording sound, send it to whisper then hav
 ## How to
 * Put your OpenAI api key in a file called OPENAI_API_KEY.txt.
 * *optional: add a keyboard shortcut to call this script. See my i3 bindings below.*
+* If using deepgram: make sure you are on python 3.10+
 * `chmod +x ./quick_whisper_typer.py`
 
 ### i3 bindings

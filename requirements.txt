@@ -13,3 +13,5 @@ uuid
 torchaudio >= 2.2.0
 soundfile >= 0.12.1
 numpy >= 1.26.4
+
+deepgram-sdk >= 3.2.7  # audio file

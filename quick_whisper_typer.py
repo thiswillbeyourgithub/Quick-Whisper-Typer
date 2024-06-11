@@ -1,3 +1,4 @@
+import sys
 import uuid
 from typing import List
 import threading
@@ -77,6 +78,7 @@ class QuickWhisper:
         verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
+        use_deepgram: bool = False,
     ):
         """
         Parameters
@@ -152,6 +154,12 @@ class QuickWhisper:
 
         disable_notifications: bool, default False
             disable notifications, except for the loop trigger
+
+        use_deepgram: bool, default False
+            if True, use deepgram instead of openai's whisper for transcription.
+            whisper_prompt and whisper_lang will be ignored.
+            Python >=3.10 is needed
+
         """
         if verbose:
             global DEBUG_IMPORT
@@ -203,7 +211,12 @@ class QuickWhisper:
         if sound_cleanup:
             to_import.append("import torchaudio")
             to_import.append("import soundfile as sf")
-        to_import.append("from litellm import completion, transcription")
+        if not use_deepgram:
+            to_import.append("from litellm import completion, transcription")
+        else:
+            assert int(sys.version.split(".")[1]) >= 10, "deepgram needs python 3.10+"
+            to_import.append("from litellm import completion")
+            to_import.append("from deepgram import DeepgramClient, PrerecordedOptions")
         if loop or task == "write":
             to_import.append("import json")
         if loop or task == "write" or task == "transform_clipboard":
@@ -236,6 +249,7 @@ class QuickWhisper:
         self.disable_notifications = disable_notifications
         self.disable_bells = disable_bells
         self.disable_voice = disable_voice
+        self.use_deepgram = use_deepgram
 
         self.wait_for_module("keyboard")
         self.loop_key_triggers = [keyboard.Key.shift, keyboard.Key.shift_r]
@@ -414,18 +428,64 @@ class QuickWhisper:
                 self.log(f"Error when cleaning up sound: {err}")
 
         # Call whisper
-        self.log("Calling whisper")
-        self.wait_for_module("transcription")
-        with open(file, "rb") as f:
-            transcript_response = transcription(
-                model="whisper-1",
-                file=f,
-                language=whisper_lang,
-                prompt=whisper_prompt,
-                temperature=0,
-                max_retries=3,
+        if not self.use_deepgram:
+            self.log("Calling whisper")
+            self.wait_for_module("transcription")
+            with open(file, "rb") as f:
+                transcript_response = transcription(
+                    model="whisper-1",
+                    file=f,
+                    language=whisper_lang,
+                    prompt=whisper_prompt,
+                    temperature=0,
+                    max_retries=3,
+                )
+            text = transcript_response.text
+        else:
+            self.log("Calling deepgram")
+            try:
+                deepgram = DeepgramClient()
+            except Exception as err:
+                raise Exception(f"Error when creating deepgram client: '{err}'")
+            # set options
+            options = dict(
+                # docs: https://playground.deepgram.com/?endpoint=listen&smart_format=true&language=en&model=nova-2
+                model="nova-2",
+
+                detect_language=True,
+                # not all features below are available for all languages
+
+                # intelligence
+                summarize=False,
+                topics=False,
+                intents=False,
+                sentiment=False,
+
+                # transcription
+                smart_format=True,
+                punctuate=True,
+                paragraphs=True,
+                utterances=True,
+                diarize=False,
+
+                # redact=None,
+                # replace=None,
+                # search=None,
+                # keywords=None,
+                # filler_words=False,
             )
-        text = transcript_response.text
+            options = PrerecordedOptions(**options)
+            with open(file, "rb") as f:
+                payload = {"buffer": f.read()}
+            content = deepgram.listen.prerecorded.v("1").transcribe_file(
+                payload,
+                options,
+            ).to_dict()
+            assert len(content["results"]["channels"]) == 1, "unexpected deepgram output"
+            assert len(content["results"]["channels"][0]["alternatives"]) == 1, "unexpected deepgram output"
+            text = content["results"]["channels"][0]["alternatives"][0]["paragraphs"]["transcript"].strip()
+            assert text, "Empty text from deepgram transcription"
+
         self.notif(self.log(f"Transcript: {text}"))
 
         if task == "write":
@@ -839,6 +899,7 @@ if __name__ == "__main__":
         import torchaudio
         import soundfile as sf
         from litellm import completion, transcription
+        from deepgram import DeepgramClient, PrerecordedOptions
         import json
         import pyclip
         from piper.voice import PiperVoice as piper
