@@ -599,7 +599,7 @@ class QuickWhisper:
 
         elif "voice_chat" in task:
             if "new" in task:
-                voice_file = cache_dir / f"chat_{int(time.time())}.txt"
+                voice_file = cache_dir / f"quick_whisper_chat_{int(time.time())}.txt"
                 self.log(f"Creating new voice chat file: {voice_file}")
 
                 messages = [
