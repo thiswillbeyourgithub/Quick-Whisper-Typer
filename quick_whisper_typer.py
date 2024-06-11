@@ -784,7 +784,7 @@ class QuickWhisper:
 
         else:
             self.key_buff = []
-            self.log(f"Pressed: {key}")
+            # self.log(f"Pressed: {key}")
 
     def log(self, message: str, do_print: bool=False) -> str:
         "add string to the log"
