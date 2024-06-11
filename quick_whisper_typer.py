@@ -659,7 +659,7 @@ class QuickWhisper:
                         voice.synthesize(answer, wav_file)
 
                     self.log(f"Playing voice file: {vocal_file_mp3}")
-                    playsound(vocal_file_mp3, block=False)
+                    playsound(vocal_file_mp3, block=True)
                 except Exception as err:
                     self.notif(
                         self.log(f"Error with piper, trying with espeak: '{err}'"))
@@ -677,7 +677,7 @@ class QuickWhisper:
                         speed=1.3,
                     )
                     response.stream_to_file(vocal_file_mp3)
-                    playsound(vocal_file_mp3, block=False)
+                    playsound(vocal_file_mp3, block=True)
                 except Exception as err:
                     self.notif(
                         self.log(f"Error with openai voice_engine, trying with espeak: '{err}'"))
