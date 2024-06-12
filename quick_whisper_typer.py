@@ -782,8 +782,8 @@ class QuickWhisper:
             main_args = self.loop_tasks[key.char]
             message = ""
             for k, v in main_args.items():
-                k = str(k)[:10]
-                v = str(v)[:10]
+                k = str(k)[:20]
+                v = str(v)[:20]
                 message += f"{k}: {v}\n"
             self._notif(f"Started loop with arg:\n{message.strip()}")
 
