@@ -78,7 +78,7 @@ class QuickWhisper:
         verbose: bool = False,
         disable_bells: bool = False,
         disable_notifications: bool = False,
-        use_deepgram: bool = False,
+        deepgram_transcription: bool = False,
     ):
         """
         Parameters
@@ -110,6 +110,7 @@ class QuickWhisper:
 
         voice_engine, default None
             piper, openai, espeak, deepgram, None
+            For deepgram, only english language is supported.
 
         piper_model_path: str, default None
             name of a piper model file.
@@ -156,7 +157,7 @@ class QuickWhisper:
         disable_notifications: bool, default False
             disable notifications, except for the loop trigger
 
-        use_deepgram: bool, default False
+        deepgram_transcription: bool, default False
             if True, use deepgram instead of openai's whisper for transcription.
             whisper_prompt and whisper_lang will be ignored.
             Python >=3.10 is needed
@@ -212,7 +213,7 @@ class QuickWhisper:
         if sound_cleanup:
             to_import.append("import torchaudio")
             to_import.append("import soundfile as sf")
-        if not use_deepgram:
+        if not deepgram_transcription:
             to_import.append("from litellm import completion, transcription")
         else:
             assert int(sys.version.split(".")[1]) >= 10, "deepgram needs python 3.10+"
@@ -252,7 +253,7 @@ class QuickWhisper:
         self.disable_notifications = disable_notifications
         self.disable_bells = disable_bells
         self.disable_voice = disable_voice
-        self.use_deepgram = use_deepgram
+        self.deepgram_transcription = deepgram_transcription
 
         self.wait_for_module("keyboard")
         self.loop_key_triggers = [keyboard.Key.shift, keyboard.Key.shift_r]
@@ -433,7 +434,7 @@ class QuickWhisper:
                 self.log(f"Error when cleaning up sound: {err}")
 
         # Call whisper
-        if not self.use_deepgram:
+        if not self.deepgram_transcription:
             self.log("Calling whisper")
             self.wait_for_module("transcription")
             with open(file, "rb") as f:
