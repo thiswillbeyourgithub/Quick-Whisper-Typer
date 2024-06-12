@@ -32,7 +32,7 @@ class QuickWhisper:
         "continue_voice_chat",
         "write",
     )
-    allowed_voice_engine = ("openai", "piper", "espeak", None)
+    allowed_voice_engine = ("openai", "piper", "espeak", "deepgram", None)
 
     # arguments to do voice cleanup before sending to whisper
     sox_cleanup = [
@@ -109,7 +109,7 @@ class QuickWhisper:
         whisper_lang: str, default None
 
         voice_engine, default None
-            piper, openai, espeak, None
+            piper, openai, espeak, deepgram, None
 
         piper_model_path: str, default None
             name of a piper model file.
@@ -231,6 +231,8 @@ class QuickWhisper:
                         to_import.append(f"voice = piper.load('{piper_model_path}')")
                 elif voice_engine == "openai":
                     to_import.append("from openai import OpenAI")
+                elif voice_engine == "deepgram":
+                    to_import.append("from deepgram import DeepgramClient, ClientOptionsFromEnv, SpeakOptions")
 
         self.import_thread = threading.Thread(target=importer, args=(to_import,))
         self.import_thread.start()
@@ -665,6 +667,27 @@ class QuickWhisper:
                         self.log(f"Error with piper, trying with espeak: '{err}'"))
                     voice_engine = "espeak"
 
+            if voice_engine == "deepgram":
+                self.wait_for_module("DeepgramClient")
+                try:
+                    deepgram = DeepgramClient(
+                        api_key="",
+                        config=ClientOptionsFromEnv()
+                    )
+                    options = SpeakOptions(
+                        model="aura-asteria-en",
+                    )
+                    response = deepgram.speak.v("1").save(
+                        vocal_file_mp3,
+                        {"text": answer},
+                        options,
+                    )
+                    playsound(vocal_file_mp3, block=True)
+                except Exception as err:
+                    self.notif(
+                        self.log(f"Error with deepgram voice_engine, trying with espeak: '{err}'"))
+                    voice_engine = "espeak"
+
             if voice_engine == "openai":
                 self.wait_for_module("OpenAI")
                 try:
@@ -867,7 +890,7 @@ def importer(import_list: List[str]) -> None:
     multithreading to import module and reduce startup time
     source: https://stackoverflow.com/questions/46698837/can-i-import-modules-from-thread-in-python
     """
-    global playsound, notification, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI
+    global playsound, notification, subprocess, sg, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI, DeepgramClient, PrerecordedOptions, ClientOptionsFromEnv, SpeakOptions
     for import_str in import_list:
         if DEBUG_IMPORT:
             print(f"Importing: '{import_str}'")
@@ -902,7 +925,7 @@ if __name__ == "__main__":
         import torchaudio
         import soundfile as sf
         from litellm import completion, transcription
-        from deepgram import DeepgramClient, PrerecordedOptions
+        from deepgram import DeepgramClient, PrerecordedOptions, ClientOptionsFromEnv, SpeakOptions
         import json
         import pyclip
         from piper.voice import PiperVoice as piper
