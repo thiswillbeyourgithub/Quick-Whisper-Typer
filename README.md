@@ -51,6 +51,8 @@ Super simple python script to start recording sound, send it to whisper then hav
 * *optional: add a keyboard shortcut to call this script. See my i3 bindings below.*
 * If using deepgram: make sure you are on python 3.10+
 * `chmod +x ./quick_whisper_typer.py`
+* `pip install -r requirements.txt`
+    * if you have an issue installing playsound, try installing playsound3
 
 ### i3 bindings
 ```

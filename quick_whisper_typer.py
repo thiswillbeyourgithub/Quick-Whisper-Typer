@@ -936,6 +936,12 @@ def importer(import_list: List[str]) -> None:
         try:
             exec(import_str, globals())
         except Exception as err:
+            if "playsound" in import_str:
+                try:
+                    exec("from playsound3 import playsound", globals())
+                    continue
+                except Exception as err:
+                    raise Exception(f"Couldn't import either playsound or playsound3: '{err}'")
             raise Exception(f"Error when importing module '{import_str}': {err}'")
     if DEBUG_IMPORT:
         print("Done importing all packages.")
@@ -952,7 +958,13 @@ if __name__ == "__main__":
         raise SystemExit()
 
     if "loop" in kwargs and kwargs["loop"]:
-        from playsound import playsound as playsound
+        try:
+            from playsound import playsound
+        except Exception:
+            try:
+                from playsound3 import playsound as playsound
+            except Exception as err:
+                raise Exception(f"Couldn't import either playsound or playsound3: '{err}'")
         from plyer import notification as notification
         if os_type == "Linux":
             import subprocess
