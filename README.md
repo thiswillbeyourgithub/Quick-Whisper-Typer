@@ -36,6 +36,8 @@ Super simple python script to start recording sound, send it to whisper then hav
 ## Features
 * Supports any spoken languages supported by whisper
 * Supports both openai's whisper and [deepgram's whisper](deepgram.com)
+* Supports for local transcription by supplying a custom URL.
+    * For example start [whispercpp](https://github.com/ggerganov/whisper.cpp) with `./server -m models/small_acft_q8_0.bin --threads 8 --audio-ctx 1500 -l fr --no-gpu --debug-mode --convert -p 1` ([models from FUTO](https://github.com/futo-org/whisper-acft/)) and use `--custom_transcription_url="http://127.0.0.1:8080/inference"`
 * Minimalist code
 * Low latency: it starts as fast as possible to be ready to listen to you
 * Four supported voice_engine: openai, [piper](https://github.com/rhasspy/piper), [deepgram](deepgram.com), espeak (fallback if any of the other fails)

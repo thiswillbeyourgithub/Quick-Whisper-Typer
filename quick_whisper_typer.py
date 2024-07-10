@@ -1,12 +1,13 @@
 import sys
 import uuid
-from typing import List
+from typing import List, Optional
 import threading
 import queue
 from pathlib import Path
 import time
 import platform
 from platformdirs import user_cache_dir
+import requests
 
 assert Path(user_cache_dir()).exists(), f"User cache dir not found: '{user_cache_dir()}'"
 cache_dir = Path(user_cache_dir()) / "QuickWhisperTyper"
@@ -79,6 +80,7 @@ class QuickWhisper:
         disable_bells: bool = False,
         disable_notifications: bool = False,
         deepgram_transcription: bool = False,
+        custom_transcription_url: Optional[str] = None,
     ):
         """
         Parameters
@@ -161,11 +163,20 @@ class QuickWhisper:
             if True, use deepgram instead of openai's whisper for transcription.
             whisper_prompt and whisper_lang will be ignored.
             Python >=3.10 is needed
+            Incompatible with custom_transcription_url
+
+        custom_transcription_url: str
+            if set to for example "http://127.0.0.1:8080/inference" then the
+            audio file will be send there for transcription.
+            You can try with whispercpp with this command for example:
+            `./server -m models/small_acft_q8_0.bin --threads 8 --audio-ctx 1500 -l fr --no-gpu --debug-mode --convert -p 1`
+            Incompatible with deepgram_transcription
 
         """
         if verbose:
             global DEBUG_IMPORT
             DEBUG_IMPORT = True
+        assert not (custom_transcription_url and deepgram_transcription), "Cannot use a custom transcription url and ask for deepgram!"
 
         # check arguments
         if gui is True:
@@ -254,6 +265,7 @@ class QuickWhisper:
         self.disable_bells = disable_bells
         self.disable_voice = disable_voice
         self.deepgram_transcription = deepgram_transcription
+        self.custom_transcription_url = custom_transcription_url
 
         self.wait_for_module("keyboard")
         self.loop_key_triggers = [keyboard.Key.shift, keyboard.Key.shift_r]
@@ -434,7 +446,31 @@ class QuickWhisper:
                 self.log(f"Error when cleaning up sound: {err}")
 
         # Call whisper
-        if not self.deepgram_transcription:
+        if self.custom_transcription_url:
+            self.log(f"Calling server at {self.custom_transcription_url}")
+
+            headers = {
+                # 'Content-Type': 'multipart/form-data'
+            }
+            data = {
+                'temperature': '0.0',
+                'temperature_inc': '0.2',
+                'response_format': 'json'
+            }
+            with open(file, "rb") as f:
+                response = requests.post(
+                    self.custom_transcription_url,
+                    headers=headers,
+                    files={'file': f},
+                    data=data
+                )
+            transcript_response = response.json()
+            if "error" in transcript_response:
+                self.log(f"Transcription error: {transcript_response['error']}")
+                raise Exception(transcript_response["error"])
+            text = transcript_response["text"]
+
+        elif not self.deepgram_transcription:
             self.log("Calling whisper")
             self.wait_for_module("transcription")
             with open(file, "rb") as f:
@@ -447,6 +483,8 @@ class QuickWhisper:
                     max_retries=3,
                 )
             text = transcript_response.text
+
+
         else:
             self.log("Calling deepgram")
             try:
