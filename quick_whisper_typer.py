@@ -324,6 +324,7 @@ class QuickWhisper:
         voice_engine: str = None,
         disable_voice: bool = None,
         restore_clipboard: bool = None,
+        custom_transcription_url: str = None
         ):
         "execcuted by self.loop or at the end of __init__"
 
@@ -348,6 +349,8 @@ class QuickWhisper:
             disable_voice = self.disable_voice
         if restore_clipboard is None and self.restore_clipboard:
             restore_clipboard = self.restore_clipboard
+        if custom_transcription_url is None and self.custom_transcription_url:
+            custom_transcription_url = self.custom_transcription_url
 
         self.log(f"Will use prompt {self.whisper_prompt} and task {task}")
 
@@ -446,8 +449,8 @@ class QuickWhisper:
                 self.log(f"Error when cleaning up sound: {err}")
 
         # Call whisper
-        if self.custom_transcription_url:
-            self.log(f"Calling server at {self.custom_transcription_url}")
+        if custom_transcription_url:
+            self.log(f"Calling server at {custom_transcription_url}")
 
             headers = {
                 # 'Content-Type': 'multipart/form-data'
@@ -459,7 +462,7 @@ class QuickWhisper:
             }
             with open(file, "rb") as f:
                 response = requests.post(
-                    self.custom_transcription_url,
+                    custom_transcription_url,
                     headers=headers,
                     files={'file': f},
                     data=data
