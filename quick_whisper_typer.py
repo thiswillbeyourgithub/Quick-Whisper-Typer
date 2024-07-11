@@ -1,6 +1,6 @@
 import sys
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Union
 import threading
 import queue
 from pathlib import Path
@@ -314,17 +314,17 @@ class QuickWhisper:
     def main(
         self,
         task: str,
-        auto_paste: bool = None,
-        gui: bool = None,
-        whisper_prompt: str = None,
-        whisper_lang: str = None,
-        LLM_instruction: str = None,
-        sound_cleanup: bool = None,
-        llm_model: str = None,
-        voice_engine: str = None,
-        disable_voice: bool = None,
-        restore_clipboard: bool = None,
-        custom_transcription_url: str = None
+        auto_paste: Optional[bool] = None,
+        gui: Optional[bool] = None,
+        whisper_prompt: Optional[str] = None,
+        whisper_lang: Optional[str] = None,
+        LLM_instruction: Optional[str] = None,
+        sound_cleanup: Optional[bool] = None,
+        llm_model: Optional[str] = None,
+        voice_engine: Optional[str] = None,
+        disable_voice: Optional[bool] = None,
+        restore_clipboard: Optional[bool] = None,
+        custom_transcription_url: Optional[str] = None
         ):
         "execcuted by self.loop or at the end of __init__"
 
@@ -770,7 +770,7 @@ class QuickWhisper:
 
         self.log("Done.")
 
-    def loop(self):
+    def loop(self) -> None:
         "run continuously, waiting for shift to be pressed enough times"
         failed = 0
         while failed <= 3:
@@ -790,7 +790,10 @@ class QuickWhisper:
                 self._notif(f"Error #{failed} in loop: '{err}'")
         raise Exception(f"{failed} errors in loop: crashing")
 
-    def on_release(self, key):
+    def on_release(
+        self,
+        key,  # : keyboard.Key
+        ) -> Union[bool, None]:
         "triggered when a key is released"
         if key in self.loop_key_triggers:
             self.log("Released loop key trigger")
@@ -870,7 +873,7 @@ class QuickWhisper:
         self.log(f"Notif: '{message}'")
         notification.notify(title="Quick Whisper", message=message, timeout=timeout)
 
-    def check_sound(self):
+    def check_sound(self) -> bool:
         try:
             out = self.sound_queue_out.get_nowait()
         except queue.Empty:
