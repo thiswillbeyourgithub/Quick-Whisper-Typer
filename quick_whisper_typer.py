@@ -796,8 +796,9 @@ class QuickWhisper:
         ) -> Union[bool, None]:
         "triggered when a key is released"
         if key in self.loop_key_triggers:
-            self.log("Released loop key trigger")
-            self.log(f"Trigger counter: {len(self.key_buff)}")
+            if self.verbose:
+                print("Released loop key trigger")
+                print(f"Trigger counter: {len(self.key_buff)}")
 
             self.key_buff.append(time.time())
 
