@@ -1,5 +1,5 @@
 import sys
-import uuid
+import uuid6
 from typing import List, Optional, Union
 import threading
 import queue
@@ -354,7 +354,7 @@ class QuickWhisper:
 
         self.log(f"Will use prompt {self.whisper_prompt} and task {task}")
 
-        file = cache_dir / (str(uuid.uuid4()) + ".mp3")
+        file = cache_dir / (str(uuid6.uuid6()) + ".mp3")
         min_duration = 2  # if the recording is shorter, exit
 
         # Start recording
@@ -690,7 +690,7 @@ class QuickWhisper:
             self.log(f'LLM answer to the chat: "{answer}"')
             self.notif(answer, -1)
 
-            vocal_file_mp3 = cache_dir / (str(uuid.uuid4()) + ".mp3")
+            vocal_file_mp3 = cache_dir / (str(uuid6.uuid6()) + ".mp3")
             voice_engine = voice_engine if not disable_voice else None
             if voice_engine == "piper":
                 self.wait_for_module("wave")

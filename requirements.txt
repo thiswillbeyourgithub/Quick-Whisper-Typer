@@ -6,7 +6,7 @@ pynput >= 1.7.6
 plyer >= 2.1.0
 litellm >= 1.32.1
 platformdirs  # for cache folder
-uuid
+uuid6
 piper-tts >= 1.2.0
 
 # used to clean up audio
