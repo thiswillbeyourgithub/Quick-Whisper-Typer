@@ -8,6 +8,9 @@ import time
 import platform
 from platformdirs import user_cache_dir
 import requests
+import os
+
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 assert Path(user_cache_dir()).exists(), f"User cache dir not found: '{user_cache_dir()}'"
 cache_dir = Path(user_cache_dir()) / "QuickWhisperTyper"
