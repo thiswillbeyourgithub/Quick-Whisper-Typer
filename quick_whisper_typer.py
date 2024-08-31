@@ -370,7 +370,7 @@ class QuickWhisper:
         self.log(f"Recording {file}")
         if os_type == "Linux":
             # Kill any previously running recordings
-            self.rec_process = subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file}", shell=True)
+            self.rec_process = subprocess.Popen(f"timeout 1h rec -r 44000 -c 1 -b 16 {file}", shell=True)
         else:
             self.wait_for_module("audio_recorder")
             audio_recorder.start(
