@@ -935,6 +935,7 @@ class QuickWhisper:
         raise Exception(f"Module not imported in time: {module}")
 
     def stop_recording(self) -> None:
+        self.log("Trying to stop recording")
         if os_type == "Linux":
             self.wait_for_module("subprocess")
             if hasattr(self, "rec_process"):
