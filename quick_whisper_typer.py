@@ -939,6 +939,7 @@ class QuickWhisper:
             self.wait_for_module("subprocess")
             if hasattr(self, "rec_process"):
                 self.log("Killing recording process")
+                self.rec_process.terminate()
                 self.rec_process.kill()
                 delattr(self, "rec_process")
         else:
