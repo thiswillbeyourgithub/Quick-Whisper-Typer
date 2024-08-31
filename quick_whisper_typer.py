@@ -399,7 +399,7 @@ class QuickWhisper:
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
                     self.notif(self.log("Pressed escape or spacebar: quitting."))
-                    self.rec_process.kill()
+                    self.stop_recording()
                     raise SystemExit("Quitting.")
 
             with keyboard.Listener(on_release=released_shift) as listener:
