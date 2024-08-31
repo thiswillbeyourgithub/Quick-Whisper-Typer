@@ -940,7 +940,15 @@ class QuickWhisper:
             if hasattr(self, "rec_process"):
                 self.log("Killing recording process")
                 self.rec_process.terminate()
-                self.rec_process.kill()
+                try:
+                    self.rec_process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    self.rec_process.kill()
+                try:
+                    self.rec_process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    raise Exception(f"The recording process is still running!")
+                assert self.rec_process.poll() is not None, "Recording process is still running"
                 delattr(self, "rec_process")
         else:
             self.wait_for_module("audio_recorder")
