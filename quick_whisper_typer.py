@@ -369,7 +369,7 @@ class QuickWhisper:
             subprocess.run(
                 ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-            subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
+            rec_process = subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
         else:
             self.wait_for_module("audio_recorder")
             audio_recorder.start(
@@ -398,7 +398,7 @@ class QuickWhisper:
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
                     self.notif(self.log("Pressed escape or spacebar: quitting."))
-                    os.system("killall rec")
+                    rec_process.kill()
                     raise SystemExit("Quitting.")
 
             with keyboard.Listener(on_release=released_shift) as listener:
@@ -408,9 +408,7 @@ class QuickWhisper:
 
         # Kill the recording
         if os_type == "Linux":
-            subprocess.run(
-                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
+            rec_process.kill()
         else:
             audio_recorder.stop()
         end_time = time.time()
