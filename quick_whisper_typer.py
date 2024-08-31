@@ -948,7 +948,7 @@ class QuickWhisper:
                 try:
                     self.rec_process.wait(timeout=1)
                 except subprocess.TimeoutExpired:
-                    raise Exception(f"The recording process is still running!")
+                    raise Exception("The recording process is still running!")
                 assert self.rec_process.poll() is not None, "Recording process is still running"
                 delattr(self, "rec_process")
         else:
