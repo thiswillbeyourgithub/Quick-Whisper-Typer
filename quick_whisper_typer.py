@@ -403,7 +403,7 @@ class QuickWhisper:
                     raise SystemExit("Quitting.")
 
             with keyboard.Listener(on_release=released_shift) as listener:
-                self.log("Shortcut listener started, press shift to stop recodring, esc or spacebar to quit.")
+                self.log("Shortcut listener started, press shift to stop recording, esc or spacebar to quit.")
 
                 listener.join()  # blocking
 
@@ -547,7 +547,7 @@ class QuickWhisper:
             try:
                 clipboard = pyclip.paste()
             except Exception as err:
-                self.log(f"Erasing the previous clipboard because error when loding it: {err}")
+                self.log(f"Erasing the previous clipboard because error when loading it: {err}")
                 clipboard = ""
 
             if LLM_instruction:
