@@ -932,7 +932,7 @@ class QuickWhisper:
             if hasattr(self, "rec_process"):
                 self.log("Killing recording process")
                 self.rec_process.kill()
-            delattr(self, "rec_process")
+                delattr(self, "rec_process")
         else:
             self.wait_for_module("audio_recorder")
             audio_recorder.stop()
