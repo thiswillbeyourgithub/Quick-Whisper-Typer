@@ -448,6 +448,7 @@ class QuickWhisper:
                 self.log(f"Error when cleaning up sound: {err}")
 
         # Call whisper
+        text = None
         if custom_transcription_url:
             self.log(f"Calling server at {custom_transcription_url}")
 
@@ -459,20 +460,25 @@ class QuickWhisper:
                 'temperature_inc': '0.2',
                 'response_format': 'json'
             }
-            with open(file, "rb") as f:
-                response = requests.post(
-                    custom_transcription_url,
-                    headers=headers,
-                    files={'file': f},
-                    data=data
-                )
-            transcript_response = response.json()
-            if "error" in transcript_response:
-                self.log(f"Transcription error: {transcript_response['error']}")
-                raise Exception(transcript_response["error"])
-            text = transcript_response["text"]
+            try:
+                with open(file, "rb") as f:
+                    response = requests.post(
+                        custom_transcription_url,
+                        headers=headers,
+                        files={'file': f},
+                        data=data
+                    )
+                response.raise_for_status()
+                transcript_response = response.json()
+                if "error" in transcript_response:
+                    self.log(f"Transcription error: {transcript_response['error']}")
+                    raise Exception(transcript_response["error"])
+                text = transcript_response["text"]
+                assert text.strip(), "Empty text found"
+            except Exception as err:
+                self.log(f"Error when using request: '{err}'\nTrying another way.")
 
-        elif not self.deepgram_transcription:
+        if text is None and (not self.deepgram_transcription):
             self.log("Calling whisper")
             self.wait_for_module("transcription")
             with open(file, "rb") as f:
@@ -487,7 +493,8 @@ class QuickWhisper:
             text = transcript_response.text
 
 
-        else:
+        if text is None:
+            assert self.deepgram_transcription
             self.log("Calling deepgram")
             try:
                 deepgram = DeepgramClient()
@@ -532,6 +539,7 @@ class QuickWhisper:
             text = content["results"]["channels"][0]["alternatives"][0]["paragraphs"]["transcript"].strip()
             assert text, "Empty text from deepgram transcription"
 
+        assert text is not None, "Text should not be None at this point"
         self.notif(self.log(f"Transcript: {text}"))
 
         if task == "write":
