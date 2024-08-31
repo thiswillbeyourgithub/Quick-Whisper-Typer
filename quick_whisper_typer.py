@@ -362,14 +362,11 @@ class QuickWhisper:
 
         # Start recording
         start_time = time.time()
+        self.stop_recording()  # just in case
         self.log(f"Recording {file}")
         if os_type == "Linux":
             # Kill any previously running recordings
-            self.wait_for_module("subprocess")
-            subprocess.run(
-                ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            rec_process = subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
+            self.rec_process = subprocess.Popen(f"rec -r 44000 -c 1 -b 16 {file} &", shell=True)
         else:
             self.wait_for_module("audio_recorder")
             audio_recorder.start(
@@ -398,7 +395,7 @@ class QuickWhisper:
                     return False
                 elif key in [keyboard.Key.esc, keyboard.Key.space]:
                     self.notif(self.log("Pressed escape or spacebar: quitting."))
-                    rec_process.kill()
+                    self.rec_process.kill()
                     raise SystemExit("Quitting.")
 
             with keyboard.Listener(on_release=released_shift) as listener:
@@ -407,10 +404,7 @@ class QuickWhisper:
                 listener.join()  # blocking
 
         # Kill the recording
-        if os_type == "Linux":
-            rec_process.kill()
-        else:
-            audio_recorder.stop()
+        self.stop_recording()
         end_time = time.time()
         self.log(f"Done recording {file}")
         playsound("sounds/Rhodes.ogg", block=False)
@@ -911,10 +905,7 @@ class QuickWhisper:
             return whisper_prompt, LLM_instruction
         else:
             self.log("Pressed cancel or escape. Exiting.")
-            if os_type == "Linux":
-                subprocess.run(
-                    ["killall", "rec"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
+            self.stop_recording()
             raise SystemExit()
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
@@ -930,6 +921,18 @@ class QuickWhisper:
             if self.verbose and cnt % 10 == 0:
                 print(f"WAITING FOR {module}")
         raise Exception(f"Module not imported in time: {module}")
+
+    def stop_recording(self) -> None:
+        if os_type == "Linux":
+            self.wait_for_module("subprocess")
+            if hasattr(self, "rec_process"):
+                self.log("Killing recording process")
+                self.rec_process.kill()
+            delattr(self, "rec_process")
+        else:
+            self.wait_for_module("audio_recorder")
+            audio_recorder.stop()
+        return
 
 
 def importer(import_list: List[str]) -> None:
