@@ -8,6 +8,7 @@ import platform
 from platformdirs import user_cache_dir
 import requests
 import os
+import psutil
 try:
     from uuid6 import uuid6 as uuid
 except Exception:
@@ -939,17 +940,11 @@ class QuickWhisper:
         if os_type == "Linux":
             self.wait_for_module("subprocess")
             if hasattr(self, "rec_process"):
-                self.log("Killing recording process")
-                self.rec_process.terminate()
-                try:
-                    self.rec_process.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    self.rec_process.kill()
-                try:
-                    self.rec_process.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    raise Exception("The recording process is still running!")
-                assert self.rec_process.poll() is not None, "Recording process is still running"
+                children = psutil.Process(self.rec_process.pid).children()
+                assert children, "It seems the rec_process has no children"
+                for child in children:
+                    child.terminate()
+
                 delattr(self, "rec_process")
         else:
             self.wait_for_module("audio_recorder")
