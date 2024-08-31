@@ -13,6 +13,7 @@ try:
 except Exception:
     from uuid import uuid4 as uuid
 
+# make litellm way faster to launch
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 assert Path(user_cache_dir()).exists(), f"User cache dir not found: '{user_cache_dir()}'"
