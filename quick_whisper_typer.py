@@ -1,5 +1,4 @@
 import sys
-import uuid6
 from typing import List, Optional, Union
 import threading
 import queue
@@ -9,6 +8,10 @@ import platform
 from platformdirs import user_cache_dir
 import requests
 import os
+try:
+    from uuid6 import uuid6 as uuid
+except Exception:
+    from uuid import uuid4 as uuid
 
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
@@ -357,7 +360,7 @@ class QuickWhisper:
 
         self.log(f"Will use prompt {self.whisper_prompt} and task {task}")
 
-        file = cache_dir / (str(uuid6.uuid6()) + ".mp3")
+        file = cache_dir / (str(uuid()) + ".mp3")
         min_duration = 2  # if the recording is shorter, exit
 
         # Start recording
@@ -685,7 +688,7 @@ class QuickWhisper:
             self.log(f'LLM answer to the chat: "{answer}"')
             self.notif(answer, -1)
 
-            vocal_file_mp3 = cache_dir / (str(uuid6.uuid6()) + ".mp3")
+            vocal_file_mp3 = cache_dir / (str(uuid()) + ".mp3")
             voice_engine = voice_engine if not disable_voice else None
             if voice_engine == "piper":
                 self.wait_for_module("wave")
