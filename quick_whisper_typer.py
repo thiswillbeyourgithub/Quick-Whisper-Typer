@@ -254,7 +254,7 @@ class QuickWhisper:
                 elif voice_engine == "deepgram":
                     to_import.append("from deepgram import DeepgramClient, ClientOptionsFromEnv, SpeakOptions")
 
-        self.import_thread = threading.Thread(target=importer, args=(to_import,))
+        self.import_thread = threading.Thread(target=importer, args=(to_import,), daemon=False)
         self.import_thread.start()
 
         # store arguments
