@@ -1004,7 +1004,8 @@ if __name__ == "__main__":
             import subprocess
         else:
             from plyer import notification as audio_recorder
-        import PySimpleGUI as sg
+        if "--gui" in args or ("gui" in kwargs and kwargs["gui"]):
+            import PySimpleGUI as sg
         from pynput import keyboard
         import os
         import torchaudio
