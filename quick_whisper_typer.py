@@ -796,6 +796,12 @@ class QuickWhisper:
             except Exception as err:
                 failed += 1
                 self._notif(f"Error #{failed} in loop: '{err}'")
+            finally:
+                try:
+                    if "listener" in locals():
+                        listener.stop()
+                except Exception as err:
+                    self._notif(f"Error: failed to stop listener: '{err}'")
         raise Exception(f"{failed} errors in loop: crashing")
 
     def on_release(
