@@ -788,7 +788,7 @@ class QuickWhisper:
                 )
                 listener.start()  # non blocking
 
-                self.notif("Loop started.")
+                self.notif("Starting new loop", timeout=1)
                 listener.join()
             except KeyboardInterrupt:
                 self.log("Quitting.", True)
