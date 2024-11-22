@@ -749,7 +749,7 @@ class QuickWhisper:
                         response_format="mp3",
                         speed=1.3,
                     )
-                    response.stream_to_file(vocal_file_mp3)
+                    response.stream_to_file(str(vocal_file_mp3.absolute()))
                     playsound(vocal_file_mp3, block=True)
                 except Exception as err:
                     self.notif(
