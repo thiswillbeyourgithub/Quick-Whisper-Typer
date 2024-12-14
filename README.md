@@ -2,7 +2,7 @@
 Super simple python script to start recording sound, send it to whisper then have it type for you anywhere.
 * Can also modify text according to voice commands.
 * Latency is as low as I could (instant if deepgram is used, <1s for openai's whisper).
-* It can be seen as a minimalist alternative to [AquaVoice](https://withaqua.com/)
+* It can be seen as a minimalist alternative to [AquaVoice](https://withaqua.com/) and can be extended easily to replace [Deepgram's Shortcut feature](https://deepgram.com/learn/introducing-shortcut-by-poised-voice-ai-tool).t
 
 ## The way each task works
 ### write
