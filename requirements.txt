@@ -8,6 +8,7 @@ litellm >= 1.32.1
 platformdirs  # for cache folder
 uuid6
 piper-tts >= 1.2.0
+psutil >= 6.1.1
 
 # used to clean up audio
 torchaudio >= 2.2.0
