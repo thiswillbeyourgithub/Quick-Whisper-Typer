@@ -477,7 +477,8 @@ class QuickWhisper:
                 text = transcript_response["text"]
                 assert text.strip(), "Empty text found"
             except Exception as err:
-                self.log(f"Error when using request: '{err}'\nTrying another way.")
+                self.log(f"Error when using custom transcription server: '{err}'")
+                raise Exception(f"Custom transcription failed: {err}")
 
         if text is None and (not self.deepgram_transcription):
             self.log("Calling whisper")
