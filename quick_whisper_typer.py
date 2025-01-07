@@ -178,6 +178,8 @@ class QuickWhisper:
             audio file will be send there for transcription.
             You can try with whispercpp with this command for example:
             `./server -m models/small_acft_q8_0.bin --threads 8 --audio-ctx 1500 -l fr --no-gpu --debug-mode --convert -p 1`
+            Note: If the custom transcription fails, it will not fallback to OpenAI's Whisper.
+            The transcription will fail entirely.
             Incompatible with deepgram_transcription
 
         """
