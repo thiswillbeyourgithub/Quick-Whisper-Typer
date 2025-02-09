@@ -458,11 +458,15 @@ class QuickWhisper:
             headers = {
                 # 'Content-Type': 'multipart/form-data'  # does not work with all APIs
             }
+            if "CUSTOM_WHISPER_API_KEY" in os.environ:
+                headers["Authorization"] = "Bearer " + os.environ["CUSTOM_WHISPER_API_KEY"]
             data = {
                 'temperature': '0.0',
                 'temperature_inc': '0.2',
                 'response_format': 'json'
             }
+            if "CUSTOM_WHISPER_MODEL" in os.environ:
+                data["model"] = os.environ["CUSTOM_WHISPER_MODEL"]
             try:
                 with open(file, "rb") as f:
                     response = requests.post(
