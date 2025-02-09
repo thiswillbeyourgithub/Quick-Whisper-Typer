@@ -456,7 +456,7 @@ class QuickWhisper:
             self.log(f"Calling server at {custom_transcription_url}")
 
             headers = {
-                # 'Content-Type': 'multipart/form-data'
+                # 'Content-Type': 'multipart/form-data'  # does not work with all APIs
             }
             data = {
                 'temperature': '0.0',
