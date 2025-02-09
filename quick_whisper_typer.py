@@ -182,6 +182,14 @@ class QuickWhisper:
             The transcription will fail entirely.
             Incompatible with deepgram_transcription
 
+        Environment Variables
+        ---------------------
+        CUSTOM_WHISPER_API_KEY: str
+            API key to use when calling a custom transcription server
+
+        CUSTOM_WHISPER_MODEL: str
+            Model name to use when calling a custom transcription server
+
         """
         if verbose:
             global DEBUG_IMPORT
