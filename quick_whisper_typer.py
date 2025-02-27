@@ -244,8 +244,7 @@ class QuickWhisper:
             if gui:
                 to_import.append("import tkinter as tk")
                 to_import.append("from tkinter import ttk")
-            else:
-                to_import.append("from pynput import keyboard")
+            to_import.append("from pynput import keyboard")
             to_import.append("import os")
             if sound_cleanup:
                 to_import.append("import torchaudio")
@@ -296,8 +295,7 @@ class QuickWhisper:
             if gui:
                 import tkinter as tk
                 from tkinter import ttk
-            else:
-                from pynput import keyboard
+            from pynput import keyboard
                 
             import os
             
