@@ -18,4 +18,4 @@ python quick_whisper_typer.py  \
     --loop \
     --verbose \
     --sound_cleanup \
-    --loop_tasks '{"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "disable_voice"}, "x": {"task": "write", "LLM_instruction": "my_instructions.txt"}, "d": {"task": "write", "LLM_instruction": "corrector.txt", "llm_model": "openrouter/anthropic/claude-3-5-haiku"}}'
+    --loop_tasks '{"n":{"task":"new_voice_chat"}, "c": {"task":"continue_voice_chat"}, "w": {"task": "write"}, "t": {"task": "transform_clipboard"}, "s": {"extra_args": "disable_voice"}, "x": {"task": "write", "LLM_instruction": "instructions/my_rules.txt"}, "d": {"task": "write", "LLM_instruction": "instructions/corrector.txt", "llm_model": "openrouter/anthropic/claude-3-5-haiku"}}'
