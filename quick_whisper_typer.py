@@ -235,7 +235,8 @@ class QuickWhisper:
         else:
             to_import.append("from plyer import audio_recorder")
         if gui:
-            to_import.append("import PySimpleGUI as sg")
+            to_import.append("import tkinter as tk")
+            to_import.append("from tkinter import ttk")
         else:
             to_import.append("from pynput import keyboard")
         to_import.append("import os")
@@ -914,31 +915,88 @@ class QuickWhisper:
         else:
             return True
 
-    def launch_gui(self, prompt: str, task: str) -> str:
-        "create a popup to manually enter a prompt"
-        title = "Sound Recorder"
-
-        layout = [
-            [sg.Text(f"TASK: {task}")],
-            [sg.Text("Whisper prompt"), sg.Input(prompt)],
-            [sg.Text("LLM instruction"), sg.Input()],
-            [
-                sg.Button("Cancel", key="-CANCEL-", button_color="blue"),
-                sg.Button("Go!", key="-GO-", button_color="red"),
-            ],
-        ]
-
-        window = sg.Window(title, layout, keep_on_top=True)
-        event, values = window.read()
-        window.close()
-
-        if event == "-GO-":
-            whisper_prompt = values[0]
-            LLM_instruction = values[1]
-            self.log(f"Whisper prompt: {whisper_prompt} for task {task}")
-            return whisper_prompt, LLM_instruction
+    def launch_gui(self, prompt: str, task: str) -> tuple:
+        "create a popup to manually enter a prompt using tkinter"
+        self.wait_for_module("tk")
+        self.wait_for_module("ttk")
+        
+        # Create result variables
+        result_whisper_prompt = None
+        result_llm_instruction = None
+        
+        # Create the main window
+        root = tk.Tk()
+        root.title("Sound Recorder")
+        root.attributes('-topmost', True)  # Keep on top
+        
+        # Function to handle the Go button
+        def on_go():
+            nonlocal result_whisper_prompt, result_llm_instruction
+            result_whisper_prompt = whisper_entry.get()
+            result_llm_instruction = llm_entry.get()
+            root.destroy()
+        
+        # Function to handle Cancel
+        def on_cancel():
+            root.destroy()
+            self.log("Pressed cancel. Exiting.")
+            self.stop_recording()
+            raise SystemExit()
+        
+        # Create a frame for the content
+        main_frame = ttk.Frame(root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Task label
+        ttk.Label(main_frame, text=f"TASK: {task}").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 10))
+        
+        # Whisper prompt
+        ttk.Label(main_frame, text="Whisper prompt:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        whisper_entry = ttk.Entry(main_frame, width=40)
+        whisper_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
+        whisper_entry.insert(0, prompt if prompt else "")
+        
+        # LLM instruction
+        ttk.Label(main_frame, text="LLM instruction:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        llm_entry = ttk.Entry(main_frame, width=40)
+        llm_entry.grid(row=2, column=1, sticky=tk.EW, pady=5)
+        
+        # Buttons frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=(10, 0))
+        
+        # Cancel button
+        cancel_button = ttk.Button(button_frame, text="Cancel", command=on_cancel)
+        cancel_button.pack(side=tk.LEFT, padx=5)
+        
+        # Go button
+        go_button = ttk.Button(button_frame, text="Go!", command=on_go, style="Accent.TButton")
+        go_button.pack(side=tk.LEFT, padx=5)
+        
+        # Create a style for the accent button
+        style = ttk.Style()
+        style.configure("Accent.TButton", foreground="white", background="red")
+        
+        # Handle window close event
+        root.protocol("WM_DELETE_WINDOW", on_cancel)
+        
+        # Center the window
+        root.update_idletasks()
+        width = root.winfo_width()
+        height = root.winfo_height()
+        x = (root.winfo_screenwidth() // 2) - (width // 2)
+        y = (root.winfo_screenheight() // 2) - (height // 2)
+        root.geometry(f'+{x}+{y}')
+        
+        # Run the main loop
+        root.mainloop()
+        
+        # Return the results
+        if result_whisper_prompt is not None:
+            self.log(f"Whisper prompt: {result_whisper_prompt} for task {task}")
+            return result_whisper_prompt, result_llm_instruction
         else:
-            self.log("Pressed cancel or escape. Exiting.")
+            self.log("Window closed without pressing Go. Exiting.")
             self.stop_recording()
             raise SystemExit()
 
@@ -1020,7 +1078,8 @@ if __name__ == "__main__":
         else:
             from plyer import notification as audio_recorder
         if "--gui" in args or ("gui" in kwargs and kwargs["gui"]):
-            import PySimpleGUI as sg
+            import tkinter as tk
+            from tkinter import ttk
         from pynput import keyboard
         import os
         import torchaudio
