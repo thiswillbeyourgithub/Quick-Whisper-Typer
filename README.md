@@ -57,6 +57,28 @@ Super simple python script to start recording sound, send it to whisper then hav
 * `pip install -r requirements.txt`
     * if you have issues installing the python package `playsound`, try installing `playsound3` instead.
 
+### Run in the background using systemd units
+
+To always have quick_whisper_typer running in the background, you can do this after modifying the `quick_whisper_typer_launcher.sh` file and `chmod +x it`:
+```shell
+mkdir -p ~/.config/systemd/user/
+echo "[Unit]
+Description=quick_whisper_typer
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=[YOUR_APPROPRIATE_PATH]/Quick_Whisper_Typer/quick_whisper_typer_launcher.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target" > ~/.config/systemd/user/quick_whisper_typer.service
+
+systemctl --user enable quick_whisper_typer.service
+systemctl --user start quick_whisper_typer.service
+```
+
 ### i3 bindings
 ```
 mode "$mode_launch_microphone" {
