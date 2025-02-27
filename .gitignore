@@ -4,3 +4,4 @@
 *.log
 *pycache*
 .aider*
+instructions/author*
