@@ -89,6 +89,7 @@ class QuickWhisper:
         disable_notifications: bool = False,
         deepgram_transcription: bool = False,
         custom_transcription_url: Optional[str] = None,
+        threaded_import: bool = False,
     ):
         """
         Parameters
@@ -181,6 +182,10 @@ class QuickWhisper:
             Note: If the custom transcription fails, it will not fallback to OpenAI's Whisper.
             The transcription will fail entirely.
             Incompatible with deepgram_transcription
+            
+        threaded_import: bool, default False
+            if True, imports modules in a separate thread to reduce startup time.
+            if False, imports modules normally in the main thread.
 
         Environment Variables
         ---------------------
@@ -225,48 +230,105 @@ class QuickWhisper:
         if loop:
                 assert not task, "If using loop, you must leave task to None"
 
-        # to reduce startup time, use threaded module import
-        to_import = [
-            "from playsound import playsound",
-            "from plyer import notification",
-        ]
-        if os_type == "Linux":
-            to_import.append("import subprocess")
-        else:
-            to_import.append("from plyer import audio_recorder")
-        if gui:
-            to_import.append("import tkinter as tk")
-            to_import.append("from tkinter import ttk")
-        else:
-            to_import.append("from pynput import keyboard")
-        to_import.append("import os")
-        if sound_cleanup:
-            to_import.append("import torchaudio")
-            to_import.append("import soundfile as sf")
-        if not deepgram_transcription:
-            to_import.append("from litellm import completion, transcription")
-        else:
-            assert int(sys.version.split(".")[1]) >= 10, "deepgram needs python 3.10+"
-            to_import.append("from litellm import completion")
-            to_import.append("from deepgram import DeepgramClient, PrerecordedOptions")
-        if loop or task == "write":
-            to_import.append("import json")
-        if loop or task == "write" or task == "transform_clipboard":
-            to_import.append("import pyclip")
-        if loop or "voice" in task:
-            if voice_engine:
-                if voice_engine == "piper":
-                    to_import.append("from piper.voice import PiperVoice as piper")
-                    to_import.append("import wave")
-                    if piper_model_path:
-                        to_import.append(f"voice = piper.load('{piper_model_path}')")
-                elif voice_engine == "openai":
-                    to_import.append("from openai import OpenAI")
-                elif voice_engine == "deepgram":
-                    to_import.append("from deepgram import DeepgramClient, ClientOptionsFromEnv, SpeakOptions")
+        # Import modules
+        if threaded_import:
+            # to reduce startup time, use threaded module import
+            to_import = [
+                "from playsound import playsound",
+                "from plyer import notification",
+            ]
+            if os_type == "Linux":
+                to_import.append("import subprocess")
+            else:
+                to_import.append("from plyer import audio_recorder")
+            if gui:
+                to_import.append("import tkinter as tk")
+                to_import.append("from tkinter import ttk")
+            else:
+                to_import.append("from pynput import keyboard")
+            to_import.append("import os")
+            if sound_cleanup:
+                to_import.append("import torchaudio")
+                to_import.append("import soundfile as sf")
+            if not deepgram_transcription:
+                to_import.append("from litellm import completion, transcription")
+            else:
+                assert int(sys.version.split(".")[1]) >= 10, "deepgram needs python 3.10+"
+                to_import.append("from litellm import completion")
+                to_import.append("from deepgram import DeepgramClient, PrerecordedOptions")
+            if loop or task == "write":
+                to_import.append("import json")
+            if loop or task == "write" or task == "transform_clipboard":
+                to_import.append("import pyclip")
+            if loop or "voice" in task:
+                if voice_engine:
+                    if voice_engine == "piper":
+                        to_import.append("from piper.voice import PiperVoice as piper")
+                        to_import.append("import wave")
+                        if piper_model_path:
+                            to_import.append(f"voice = piper.load('{piper_model_path}')")
+                    elif voice_engine == "openai":
+                        to_import.append("from openai import OpenAI")
+                    elif voice_engine == "deepgram":
+                        to_import.append("from deepgram import DeepgramClient, ClientOptionsFromEnv, SpeakOptions")
 
-        self.import_thread = threading.Thread(target=importer, args=(to_import,), daemon=False)
-        self.import_thread.start()
+            self.import_thread = threading.Thread(target=importer, args=(to_import,), daemon=False)
+            self.import_thread.start()
+        else:
+            # Import modules directly
+            global playsound, notification, subprocess, keyboard, torchaudio, sf, completion, transcription, pyclip, json, piper, wave, voice, OpenAI, DeepgramClient, PrerecordedOptions, ClientOptionsFromEnv, SpeakOptions, tk, ttk
+            
+            try:
+                from playsound import playsound
+            except Exception:
+                try:
+                    from playsound3 import playsound
+                except Exception as err:
+                    raise Exception(f"Couldn't import either playsound or playsound3: '{err}'")
+            
+            from plyer import notification
+            
+            if os_type == "Linux":
+                import subprocess
+            else:
+                from plyer import audio_recorder
+                
+            if gui:
+                import tkinter as tk
+                from tkinter import ttk
+            else:
+                from pynput import keyboard
+                
+            import os
+            
+            if sound_cleanup:
+                import torchaudio
+                import soundfile as sf
+                
+            if not deepgram_transcription:
+                from litellm import completion, transcription
+            else:
+                assert int(sys.version.split(".")[1]) >= 10, "deepgram needs python 3.10+"
+                from litellm import completion
+                from deepgram import DeepgramClient, PrerecordedOptions
+                
+            if loop or task == "write":
+                import json
+                
+            if loop or task == "write" or task == "transform_clipboard":
+                import pyclip
+                
+            if loop or "voice" in task:
+                if voice_engine:
+                    if voice_engine == "piper":
+                        from piper.voice import PiperVoice as piper
+                        import wave
+                        if piper_model_path:
+                            voice = piper.load(piper_model_path)
+                    elif voice_engine == "openai":
+                        from openai import OpenAI
+                    elif voice_engine == "deepgram":
+                        from deepgram import DeepgramClient, ClientOptionsFromEnv, SpeakOptions
 
         # store arguments
         self.verbose = verbose
@@ -1002,6 +1064,10 @@ class QuickWhisper:
 
     def wait_for_module(self, module: str, timeout: int = 10) -> None:
         "sleep while the module is not imported by importer"
+        if not hasattr(self, 'import_thread'):
+            # If not using threaded imports, modules should already be available
+            return
+            
         cnt = 0
         start = time.time()
         while time.time() - start < timeout:
@@ -1064,7 +1130,8 @@ if __name__ == "__main__":
         print(help(QuickWhisper))
         raise SystemExit()
 
-    if "loop" in kwargs and kwargs["loop"]:
+    # Pre-import modules for loop mode when not using threaded imports
+    if "loop" in kwargs and kwargs["loop"] and not kwargs.get("threaded_import", False):
         try:
             from playsound import playsound
         except Exception:
