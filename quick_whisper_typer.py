@@ -518,8 +518,8 @@ class QuickWhisper:
                 raise Exception(f"Error when creating deepgram client: '{err}'")
             # set options
             options = dict(
-                # docs: https://playground.deepgram.com/?endpoint=listen&smart_format=true&language=en&model=nova-2
-                model="nova-2",
+                # docs: https://playground.deepgram.com/?endpoint=listen&smart_format=true&language=en&model=nova-3
+                model="nova-3",
 
                 detect_language=True,
                 # not all features below are available for all languages
