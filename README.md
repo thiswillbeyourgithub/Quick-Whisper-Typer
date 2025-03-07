@@ -73,7 +73,9 @@ Restart=on-failure
 RestartSec=10
 
 [Install]
-WantedBy=graphical-session.target" > ~/.config/systemd/user/quick_whisper_typer.service
+; WantedBy=graphical-session.target
+WantedBy=default.target
+" > ~/.config/systemd/user/quick_whisper_typer.service
 
 systemctl --user enable quick_whisper_typer.service
 systemctl --user start quick_whisper_typer.service
