@@ -464,7 +464,9 @@ class QuickWhisper:
             self.log(f"Calling server at {custom_transcription_url}")
 
             headers = {
-                # 'Content-Type': 'multipart/form-data'  # does not work with all APIs
+                # does not work with all APIs, empty can work too
+                # 'Content-Type': 'multipart/form-data',  # does not work with speaches
+                # 'Content-Type': 'application/json',  # worked on some clients
             }
             if "CUSTOM_WHISPER_API_KEY" in os.environ:
                 headers["Authorization"] = "Bearer " + os.environ["CUSTOM_WHISPER_API_KEY"]
